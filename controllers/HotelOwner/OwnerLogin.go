@@ -41,7 +41,7 @@ func OwnerSignUp(c *gin.Context) {
 	email := Init.DB.Where("email = ?", owner.Email).First(&owner)
 	if email.RowsAffected > 0 {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"Message": "Email already exist",
+			"Message": "Email already exists",
 		})
 		return
 	}
