@@ -3,7 +3,6 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	Auth "github.com/shaikhzidhin/Auth"
-	"github.com/shaikhzidhin/controllers"
 	"github.com/shaikhzidhin/controllers/HotelOwner"
 )
 
@@ -12,9 +11,9 @@ func OwnerRoutes(c *gin.Engine) {
 	owner := c.Group("/owner")
 	{
 		owner.POST("/singup", HotelOwner.OwnerSignUp)
+		owner.POST("/signup-verification", HotelOwner.OwnerSingupVerification)
 		owner.POST("/login", HotelOwner.OwnerLogin)
-		owner.POST("/login/otp", controllers.OtpLog)
-		owner.POST("/login/otpvalidate", controllers.CheckOtp)
+
 	}
 	hotel := c.Group("/hotel")
 	{

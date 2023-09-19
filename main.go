@@ -14,6 +14,7 @@ func main() {
 	r := gin.Default()
 
 	routes.OwnerRoutes(r)
+	routes.UserRoutes(r)
 
 	r.Run("localhost:3000")
 }

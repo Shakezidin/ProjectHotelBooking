@@ -25,7 +25,7 @@ func ViewHotelFecilities(c *gin.Context) {
 
 // >>>>>>>>>>>>>> Add hotel <<<<<<<<<<<<<<<<<<<<<<<<<<
 func AddHotel(c *gin.Context) {
-	var hotel models.Hotel
+	var hotel models.Hotels
 	if err := c.BindJSON(&hotel); err != nil {
 		c.JSON(400, gin.H{
 			"msg":   "binding error1",
@@ -64,7 +64,7 @@ func AddHotel(c *gin.Context) {
 // >>>>>>>>>>>>>> view hotels <<<<<<<<<<<<<<<<<<<<<<<<<<
 
 func ViewHotels(c *gin.Context) {
-	var hotel []models.Hotel
+	var hotel []models.Hotels
 	header := c.Request.Header.Get("Authorization")
 	username, err := Auth.Trim(header)
 	if err != nil {
@@ -93,7 +93,7 @@ func ViewSpecificHotel(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "convert error"})
 		return
 	}
-	var hotel models.Hotel
+	var hotel models.Hotels
 
 	header := c.Request.Header.Get("Authorization")
 	username, err := Auth.Trim(header)
@@ -133,7 +133,7 @@ func Hoteledit(c *gin.Context) {
 		return
 	}
 
-	var hotel models.Hotel
+	var hotel models.Hotels
 	if err := Init.DB.Where("owner_username = ? AND id = ?", username, uint(hotelId)).First(&hotel).Error; err != nil {
 		c.JSON(500, gin.H{
 			"msg": err.Error(),
@@ -207,8 +207,8 @@ func DeleteHotel(c *gin.Context) {
 		c.JSON(404, gin.H{"error": "username didn't get"})
 		return
 	}
-	var hotel models.Hotel
-	result := Init.DB.Where("owner_username = ? AND id = ?", username, uint(hotelId)).Delete(&hotel)
+
+	result := Init.DB.Where("owner_username = ? AND id = ?", username, uint(hotelId)).Delete(&models.Hotels{})
 	if result.Error != nil {
 		c.JSON(500, gin.H{"error": result.Error.Error()})
 		return
@@ -232,7 +232,7 @@ func HotelAvailability(c *gin.Context) {
 		return
 	}
 
-	var hotel models.Hotel
+	var hotel models.Hotels
 	if err := Init.DB.First(&hotel, hotelId).Error; err != nil {
 		c.JSON(404, gin.H{
 			"hello": "Hot",

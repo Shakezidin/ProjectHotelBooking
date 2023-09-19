@@ -40,7 +40,7 @@ func ViewCancellation(c *gin.Context) {
 // >>>>>>>>>>>>>> view Room catagory <<<<<<<<<<<<<<<<<<<<<<<<<<
 
 func ViewRoomCatagory(c *gin.Context) {
-	var catagory []models.Cancellation
+	var catagory []models.RoomCategory
 	if err := Init.DB.Find(&catagory).Error; err != nil {
 		c.JSON(400, gin.H{"msg": err.Error()})
 		return
@@ -64,6 +64,7 @@ func AddRoom(c *gin.Context) {
 		NoOfRooms   int     `json:"number_of_rooms"`
 		IsAvailable bool    `json:"is_available"`
 		Discount    float64 `json:"discount"`
+		Fecilities  []string `json:"facilities" gorm:"type:jsonb"`
 	}
 	c.JSON(200, gin.H{
 		"room": room,
@@ -95,7 +96,7 @@ func AddingRoom(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "Invalid room_category_id"})
 		return
 	}
-	var room models.Room
+	var room models.Rooms
 
 	if err := c.ShouldBindJSON(&room); err != nil {
 		c.JSON(400, gin.H{
@@ -103,6 +104,9 @@ func AddingRoom(c *gin.Context) {
 		})
 		return
 	}
+	room.CancellationId = uint(cancellationID)
+	room.ID = uint(hotelID)
+	room.RoomCategoryId = uint(roomCategoryID)
 	validationErr := validate.Struct(room)
 	if validationErr != nil {
 		c.JSON(400, gin.H{
@@ -118,9 +122,7 @@ func AddingRoom(c *gin.Context) {
 		return
 	}
 
-	room.Cancellation_Id = uint(cancellationID)
-	room.ID = uint(hotelID)
-	room.Category_Id = uint(roomCategoryID)
+	
 	room.OwnerUsername = username
 	room.DiscountPrice = room.Price - (room.Price * room.Discount / 100)
 	if err := Init.DB.Create(&room).Error; err != nil {
@@ -153,7 +155,7 @@ func EditRoom(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "convert error"})
 		return
 	}
-	var room models.Room
+	var room models.Rooms
 	if err := Init.DB.Where("hotel_id = ? AND room_id = ?", uint(hotelId), uint(roomId)).First(&room).Error; err != nil {
 		c.JSON(500, gin.H{
 			"msg": err.Error(),
@@ -224,8 +226,8 @@ func ViewRooms(c *gin.Context) {
 		c.JSON(404, gin.H{"error": "username didnt get"})
 		return
 	}
-	var rooms []models.Room
-	if err := Init.DB.Where("hotel_id = ? AND ownerusername = ?", uint(hotelId), username).Find(&rooms).Error; err != nil {
+	var rooms []models.Rooms
+	if err := Init.DB.Preload("RoomCategory").Where("hotel_id = ? AND owner_username = ?", uint(hotelId), username).Find(&rooms).Error; err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
@@ -261,7 +263,7 @@ func ViewspecificRoom(c *gin.Context) {
 		return
 	}
 
-	var room models.Room
+	var room models.Rooms
 	if err := Init.DB.Where("hotel_id = ? AND room_id = ?", uint(hotelId), uint(roomId)).First(&room).Error; err != nil {
 		c.JSON(500, gin.H{
 			"msg": err.Error(),
@@ -272,8 +274,10 @@ func ViewspecificRoom(c *gin.Context) {
 
 }
 
+// >>>>>>>>>>>>>>>> Delete a Room <<<<<<<<<<<<<<<<<<<<<<<<<<
+
 func DeleteRoom(c *gin.Context) {
-	var room models.Room
+	var room models.Rooms
 	header := c.Request.Header.Get("Authorization")
 	username, err := Auth.Trim(header)
 	if err != nil {
@@ -297,6 +301,8 @@ func DeleteRoom(c *gin.Context) {
 	c.JSON(200, gin.H{"status": "delete success"})
 }
 
+// >>>>>>>>>>>>>> Switching Room Availability <<<<<<<<<<<<<<<<<<<<<<<<<<
+
 func RoomAvailability(c *gin.Context) {
 	roomIDStr := c.DefaultQuery("hotelid", "")
 	if roomIDStr == "" {
@@ -308,7 +314,7 @@ func RoomAvailability(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "convert error"})
 		return
 	}
-	var room models.Room
+	var room models.Rooms
 	if err := Init.DB.First(&room, roomId).Error; err != nil {
 		c.JSON(404, gin.H{
 			"hello": "Hot",

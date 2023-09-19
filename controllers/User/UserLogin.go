@@ -1,17 +1,23 @@
 package user
 
 import (
-	"fmt"
+	"context"
+	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
 	auth "github.com/shaikhzidhin/Auth"
+	"github.com/shaikhzidhin/controllers"
+	"github.com/shaikhzidhin/initiializer"
 	Init "github.com/shaikhzidhin/initiializer"
 	"github.com/shaikhzidhin/models"
 )
 
 var validate = validator.New()
+
+// >>>>>>>>>>>>>> User Signup <<<<<<<<<<<<<<<<<<<<<<<<<<
 
 func UserSignup(c *gin.Context) {
 	var user models.User
@@ -45,6 +51,14 @@ func UserSignup(c *gin.Context) {
 		return
 	}
 
+	phone := Init.DB.Where("phone = ?", user.Phone).First(&user)
+	if phone.RowsAffected > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"Message": "phone number already exist",
+		})
+		return
+	}
+
 	if err := user.HashPassword(user.Password); err != nil {
 		c.JSON(400, gin.H{
 			"msg": "hashing error",
@@ -53,22 +67,71 @@ func UserSignup(c *gin.Context) {
 		return
 	}
 
-	record := Init.DB.Create(&user)
-	if record.Error != nil {
-		// Log the error for debugging purposes.
-		fmt.Println("Database error:", record.Error)
+	Otp := controllers.GetOTP(user.Name, user.Email)
 
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Error occurred while creating owner",
-			"error":   record.Error.Error(),
-		})
+	jsonData, err := json.Marshal(user)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error encoding JSON"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Owner create Success",
-	})
+	//inserting the otp into reddis
+	err = initiializer.ReddisClient.Set(context.Background(), "signUpOTP"+user.Email, Otp, 1*time.Minute).Err()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error inserting otp in redis client"})
+		return
+	}
+
+	//inserting the data into reddis
+	err = initiializer.ReddisClient.Set(context.Background(), "userData"+user.Email, jsonData, 1*time.Minute).Err()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error inserting user data in redis client"})
+		return
+	}
+
+	c.JSON(http.StatusAccepted, gin.H{"status": "true", "messsage": "Go to user/signup-verification"})
 }
+
+// >>>>>>>>>>>>>> User OTP verification <<<<<<<<<<<<<<<<<<<<<<<<<<
+
+func SingupVerification(c *gin.Context) {
+	type otpCredentials struct {
+		Email string `json:"email"`
+		Otp   string `json:"otp"`
+	}
+	var otpCred otpCredentials
+	if err := c.ShouldBindJSON(&otpCred); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": err})
+		return
+	}
+
+	if controllers.VerifyOTP("signUpOTP"+otpCred.Email, otpCred.Otp, c) {
+		var userData models.User
+		superKey := "userData" + otpCred.Email
+		jsonData, err := initiializer.ReddisClient.Get(context.Background(), superKey).Result()
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error getting user data from redis client"})
+			return
+		}
+		err = json.Unmarshal([]byte(jsonData), &userData)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error binding reddis json data to user variable"})
+			return
+		} else {
+			result := initiializer.DB.Create(&userData)
+			if result.Error != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"status": "false", "Error": result.Error})
+				return
+			}
+		}
+
+		c.JSON(http.StatusAccepted, gin.H{"status": "true", "message": "Otp Verification success. User creation done"})
+	} else {
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "false", "message": "Invalid OTP"})
+	}
+}
+
+// >>>>>>>>>>>>>> User Login <<<<<<<<<<<<<<<<<<<<<<<<<<
 
 func UserLogin(c *gin.Context) {
 	var userLogin models.Login

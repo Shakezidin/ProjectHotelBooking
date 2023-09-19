@@ -19,12 +19,17 @@ func Database_connection() {
 	if err != nil {
 		fmt.Println("Connection to database failed")
 	}
-	DB.AutoMigrate(&models.Cancellation{})
-	DB.AutoMigrate(&models.RoomFecilities{})
-	DB.AutoMigrate(&models.HotelCategory{})
-	DB.AutoMigrate(&models.Owner{})
-	DB.AutoMigrate(&models.HotelAmenities{})
-	DB.AutoMigrate(&models.Hotel{})
-	DB.AutoMigrate(&models.Room{})
-
+	DB.AutoMigrate(
+		&models.Admin{},
+		&models.Cancellation{},
+		&models.RoomFecilities{},
+		&models.RoomCategory{},
+		&models.Rooms{},
+		&models.HotelCategory{},
+		&models.AvailableRoom{},
+		&models.Owner{},
+		&models.HotelAmenities{},
+		&models.Hotels{},
+		&models.User{},
+	)
 }

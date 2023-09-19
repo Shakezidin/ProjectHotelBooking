@@ -82,3 +82,41 @@ func AuthMiddleWare(c *gin.Context) {
 
 	c.Next()
 }
+
+func UserAuthMiddleWare(c *gin.Context) {
+	header := c.Request.Header.Get("Authorization")
+	rslt, err := Trim(header)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "trim error"})
+		c.Abort()
+		return
+	}
+	var user models.User
+	result := Init.DB.Where("user_name = ?", rslt).First(&user)
+	if result.Error != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "username not found"})
+		c.Abort()
+		return
+	}
+
+	c.Next()
+}
+
+func AdminAuthMiddleWare(c *gin.Context) {
+	header := c.Request.Header.Get("Authorization")
+	rslt, err := Trim(header)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "trim error"})
+		c.Abort()
+		return
+	}
+	var admin models.Admin
+	result := Init.DB.Where("user_name = ?", rslt).First(&admin)
+	if result.Error != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "admin not found"})
+		c.Abort()
+		return
+	}
+
+	c.Next()
+}
