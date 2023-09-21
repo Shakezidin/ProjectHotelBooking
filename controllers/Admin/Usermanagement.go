@@ -26,7 +26,7 @@ func ViewUser(c *gin.Context) {
 func ViewBlockedUser(c *gin.Context) {
 	var users []models.User
 
-	if err := Init.DB.Where("is_block = ?", true).Find(&users); err != nil {
+	if err := Init.DB.Where("is_block = ?", true).Find(&users).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Blocked user fetching error"})
 		return
 	}
@@ -40,7 +40,7 @@ func ViewBlockedUser(c *gin.Context) {
 func ViewUnblockedUsers(c *gin.Context) {
 	var users []models.User
 
-	if err := Init.DB.Where("is_block = ?", false).Find(&users); err != nil {
+	if err := Init.DB.Where("is_block = ?", false).Find(&users).Error;err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "un-Blocked user fetching error"})
 		return
 	}

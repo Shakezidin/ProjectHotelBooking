@@ -66,7 +66,7 @@ func Deletecancellation(c *gin.Context) {
 		return
 	}
 
-	if err := Init.DB.Where("cancellation_id = ?", uint(cancellationID)).Delete(&models.Cancellation{}); err != nil {
+	if err := Init.DB.Where("cancellation_id = ?", uint(cancellationID)).Delete(&models.Cancellation{}).Error; err != nil {
 		c.JSON(400, gin.H{"Error": "delete error"})
 		return
 	}

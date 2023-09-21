@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/smtp"
+	"os"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -32,8 +33,8 @@ func getRandNum() (string, error) {
 }
 
 func sendEmail(name, msg, email string) {
-	SMTPemail := "sinuzidin@gmail.com"
-	SMTPpass := "bprfpoafrlxdfqrt"
+	SMTPemail := os.Getenv("EMAIL")
+	SMTPpass := os.Getenv("PASSWORD")
 	auth := smtp.PlainAuth("", SMTPemail, SMTPpass, "smtp.gmail.com")
 
 	err := smtp.SendMail("smtp.gmail.com:587", auth, SMTPemail, []string{email}, []byte(msg))

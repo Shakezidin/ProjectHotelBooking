@@ -23,6 +23,8 @@ var validate = validator.New()
 func OwnerSignUp(c *gin.Context) {
 	var owner models.Owner
 
+	time.Sleep(time.Second*10)
+
 	if err := c.ShouldBindJSON(&owner); err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{
 			"Message": "binding error",

@@ -30,7 +30,7 @@ func AdminLogin(c *gin.Context) {
 		return
 	}
 
-	result := Init.DB.Where("username = ?", adminLogin.Username).First(&admin)
+	result := Init.DB.Where("user_name = ?", adminLogin.Username).First(&admin)
 	if result.Error != nil {
 		c.JSON(400, gin.H{"error": "username not found"})
 		return

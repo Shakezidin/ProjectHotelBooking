@@ -55,7 +55,7 @@ func AddHotelfecilility(c *gin.Context) {
 }
 
 func DeleteHotelfecility(c *gin.Context) {
-	fecilityIDStr := c.DefaultQuery("hotelid", "")
+	fecilityIDStr := c.DefaultQuery("fecilityid", "")
 	if fecilityIDStr == "" {
 		c.JSON(400, gin.H{"error": "hotelid query parameter is missing"})
 		return

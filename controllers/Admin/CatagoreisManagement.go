@@ -66,7 +66,7 @@ func DeleteHotelcatagory(c *gin.Context) {
 		return
 	}
 
-	if err := Init.DB.Where("catagory_id = ?", uint(catagoryID)).Delete(&models.HotelCategory{}); err != nil {
+	if err := Init.DB.Where("catagory_id = ?", uint(catagoryID)).Delete(&models.HotelCategory{}).Error;err != nil {
 		c.JSON(400, gin.H{"Error": "delete error"})
 		return
 	}

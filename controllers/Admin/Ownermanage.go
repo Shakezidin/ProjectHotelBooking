@@ -11,10 +11,10 @@ import (
 func ViewOwner(c *gin.Context) {
 	var owners []models.Owner
 
-	if err := Init.DB.Find(&owners); err != nil {
+	if err := Init.DB.Find(&owners).Error;err != nil {
 		c.JSON(400, gin.H{"error": "fetching owners error"})
 		return
-	}
+	}	
 
 	c.JSON(200, gin.H{"owners": owners})
 }

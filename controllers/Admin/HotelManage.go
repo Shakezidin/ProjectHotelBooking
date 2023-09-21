@@ -11,7 +11,7 @@ import (
 func BlockedHotels(c *gin.Context) {
 	var hotels []models.Hotels
 
-	if err := Init.DB.Where("is_block", true).Find(&hotels); err != nil {
+	if err := Init.DB.Where("is_block", true).Find(&hotels).Error; err != nil {
 		c.JSON(400, gin.H{"error": "fetching blocked hotels error"})
 		return
 	}
@@ -27,7 +27,7 @@ func OwnerHotels(c *gin.Context) {
 	}
 	var hotels []models.Hotels
 
-	if err := Init.DB.Where("owner_username = ?", username).Find(&hotels); err != nil {
+	if err := Init.DB.Where("owner_username = ?", username).Find(&hotels).Error; err != nil {
 		c.JSON(400, gin.H{"error": err})
 		return
 	}
@@ -69,7 +69,7 @@ func BlockandUnblockhotel(c *gin.Context) {
 func HotelforApproval(c *gin.Context) {
 	var hotel models.Hotels
 
-	if err := Init.DB.Where("adminapproval = ?", false).Find(&hotel); err != nil {
+	if err := Init.DB.Preload("HotelCategory").Where("admin_approval = ?", false).Find(&hotel).Error; err != nil {
 		c.JSON(400, gin.H{"error": err})
 		return
 	}

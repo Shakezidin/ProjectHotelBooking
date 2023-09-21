@@ -27,7 +27,7 @@ type RoomFecilities struct {
 
 type RoomCategory struct {
 	gorm.Model
-	Name            string `json:"name" gorm:"not null"`
+	Name string `json:"name" gorm:"not null"`
 }
 
 type Rooms struct {
@@ -48,7 +48,8 @@ type Rooms struct {
 	DiscountPrice  float64         `json:"discount_price"`
 	Discount       float64         `json:"discount"`
 	AdminApproval  bool            `json:"admin_approval" gorm:"default=false"`
-	HotelID        uint            `json:"hotel_id"`
+	HotelsId       uint            `json:"hotel_id"`
+	Hotels         Hotels          `gorm:"ForeignKey:HotelsId"`
 	OwnerUsername  string          `json:"owner_username"`
 	RoomCategoryId uint            `json:"category_id" gorm:"not null"`
 	RoomCategory   RoomCategory    `gorm:"ForeignKey:RoomCategoryId"`

@@ -8,28 +8,35 @@ import (
 	Init "github.com/shaikhzidhin/initiializer"
 	"github.com/shaikhzidhin/models"
 )
+
 // >>>>>>>>>>>>>> User HomePage <<<<<<<<<<<<<<<<<<<<<<<<<<
 
 func UserHome(c *gin.Context) {
 	city := c.DefaultQuery("location", "")
 	if city == "" {
-		c.JSON(400, gin.H{"error": "number of children query parameter is missing"})
+		c.JSON(400, gin.H{"error": "location query parameter is missing"})
 		return
 	}
-	var hotelsWithRooms []models.Hotels
+	var hotels []models.Hotels
 
-	if err := Init.DB.
-		Table("hotels").
-		Select("hotels.*, rooms.*").
-		Joins("LEFT JOIN rooms ON hotels.id = rooms.hotel_id").
-		Where("hotels.city = ? AND hotels.is_available = ? AND hotels.is_blocked = ? AND hotels.admin_approval = ? AND rooms.is_available = ? AND rooms.is_blocked = ? AND rooms.admin_approval = ?",
-			city, false, false, false, true, false, false).
-		Scan(&hotelsWithRooms).Error; err != nil {
+	if err := Init.DB.Preload("HotelCategory").Where("city = ?", city).Find(&hotels).Error; err != nil {
 		c.JSON(400, gin.H{"error": "Error"})
 		return
 	}
+	var rooms []models.Rooms
 
-	c.JSON(200, gin.H{"Hotels": hotelsWithRooms})
+	for i := range hotels {
+
+		// Retrieve rooms for the current hotel
+		if err := Init.DB.Where("hotels_id = ?", hotels[i].ID).Find(&rooms).Error; err != nil {
+			// Handle the error, e.g., return an error response
+		}
+
+		// Assign the rooms to the current hotel
+		// hotels[i].Rooms = rooms
+	}
+
+	c.JSON(200, gin.H{"Hotels": hotels, "rooms": rooms})
 }
 
 // >>>>>>>>>>>>>> User Searched Result <<<<<<<<<<<<<<<<<<<<<<<<<<

@@ -16,6 +16,7 @@ func UserRoutes(c *gin.Engine) {
 
 	profile := c.Group("/userprofile")
 	{
+		profile.Use(Auth.AuthMiddleWare)
 		profile.GET("/profile", Auth.UserAuthMiddleWare, User.Profile)
 		profile.PATCH("/editprofile",Auth.UserAuthMiddleWare, User.ProfileEdit)
 		profile.POST("/changepassword",Auth.UserAuthMiddleWare,User.PasswordChange)
@@ -23,7 +24,7 @@ func UserRoutes(c *gin.Engine) {
 
 	home:=c.Group("/userhome")
 	{
-		home.GET("/homepage",Auth.UserAuthMiddleWare,User.UserHome)
+		home.GET("/homepage",User.UserHome)
 		home.GET("/searchresult",Auth.UserAuthMiddleWare,User.Searching)
 	}
 }
