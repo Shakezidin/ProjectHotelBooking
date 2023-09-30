@@ -2,8 +2,8 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	Auth "github.com/shaikhzidhin/Auth"
 	Admin "github.com/shaikhzidhin/controllers/Admin"
+	"github.com/shaikhzidhin/middleware"
 )
 
 func AdminRoutes(c *gin.Engine) {
@@ -15,30 +15,38 @@ func AdminRoutes(c *gin.Engine) {
 
 		//<<<<<<<<<other admin controlls>>>>>>>>>>>>>>>>>>
 
-		admin.GET("/viewcancellation", Auth.AdminAuthMiddleWare, Admin.ViewRoomCancellation)
-		admin.POST("/addcancellation", Auth.AdminAuthMiddleWare, Admin.Addcancellation)
-		admin.DELETE("/deletecancellation", Auth.AdminAuthMiddleWare, Admin.Deletecancellation)
+		admin.GET("/viewcancellation", middleware.AdminAuthMiddleWare, Admin.ViewRoomCancellation)
+		admin.POST("/addcancellation", middleware.AdminAuthMiddleWare, Admin.Addcancellation)
+		admin.DELETE("/deletecancellation", middleware.AdminAuthMiddleWare, Admin.Deletecancellation)
 
-		admin.GET("/hotelcatagories", Auth.AdminAuthMiddleWare, Admin.ViewHotelCatagories)
-		admin.POST("/addhotelcatagories", Auth.AdminAuthMiddleWare, Admin.AddHotlecatagory)
-		admin.DELETE("/deletehotelcatagory", Auth.AdminAuthMiddleWare, Admin.DeleteHotelcatagory)
+		admin.GET("/hotelcatagories", middleware.AdminAuthMiddleWare, Admin.ViewHotelCatagories)
+		admin.POST("/addhotelcatagories", middleware.AdminAuthMiddleWare, Admin.AddHotlecatagory)
+		admin.DELETE("/deletehotelcatagory", middleware.AdminAuthMiddleWare, Admin.DeleteHotelcatagory)
 
-		admin.GET("/viewhotelfecilities", Auth.AdminAuthMiddleWare, Admin.ViewHotelFecilities)
-		admin.POST("/addhotelfecility", Auth.AdminAuthMiddleWare, Admin.AddHotelfecilility)
-		admin.DELETE("/deletehotelfecility", Auth.AdminAuthMiddleWare, Admin.DeleteHotelfecility)
+		admin.GET("/viewhotelfecilities", middleware.AdminAuthMiddleWare, Admin.ViewHotelFecilities)
+		admin.POST("/addhotelfecility", middleware.AdminAuthMiddleWare, Admin.AddHotelfecilility)
+		admin.DELETE("/deletehotelfecility", middleware.AdminAuthMiddleWare, Admin.DeleteHotelfecility)
 
-		admin.GET("/viewowners", Auth.AdminAuthMiddleWare, Admin.ViewOwner)
-		admin.GET("/blockowner", Auth.AdminAuthMiddleWare, Admin.BlockOwner)
+		admin.GET("/viewroomfecilities", middleware.AdminAuthMiddleWare, Admin.ViewRoomFecilities)
+		admin.POST("/addroomfecility", middleware.AdminAuthMiddleWare, Admin.AddRoomfecilility)
+		admin.DELETE("/deleteroomfecility", middleware.AdminAuthMiddleWare, Admin.DeleteRoomFecility)
 
-		admin.GET("/viewblockedhotels", Auth.AdminAuthMiddleWare, Admin.BlockedHotels)
-		admin.GET("/ownershotels", Auth.AdminAuthMiddleWare, Admin.OwnerHotels)
-		admin.GET("/hotelblockandunblock", Auth.AdminAuthMiddleWare, Admin.BlockandUnblockhotel)
-		admin.GET("/approvalpending", Auth.AdminAuthMiddleWare, Admin.HotelforApproval)
-		admin.GET("/hotelapproving", Auth.AdminAuthMiddleWare, Admin.HotelsApproval)
+		admin.GET("/viewroomcatagories", middleware.AdminAuthMiddleWare, Admin.ViewRoomCatagory)
+		admin.POST("/addroomcatagory", middleware.AdminAuthMiddleWare, Admin.AddRoomCatagory)
+		admin.DELETE("/deleteroomcatagory", middleware.AdminAuthMiddleWare, Admin.DeleteRoomCatagories)
 
-		admin.GET("/viewusers", Auth.AdminAuthMiddleWare, Admin.ViewUser)
-		admin.GET("/viewblockedusers", Auth.AdminAuthMiddleWare, Admin.ViewBlockedUser)
-		admin.GET("/viewunblockedusers", Auth.AdminAuthMiddleWare, Admin.ViewUnblockedUsers)
-		admin.GET("/blockandunblockuser", Auth.AdminAuthMiddleWare, Admin.BlockandUnblockUser)
+		admin.GET("/viewowners", middleware.AdminAuthMiddleWare, Admin.ViewOwner)
+		admin.GET("/blockowner", middleware.AdminAuthMiddleWare, Admin.BlockOwner)
+
+		admin.GET("/viewblockedhotels", middleware.AdminAuthMiddleWare, Admin.BlockedHotels)
+		admin.GET("/ownershotels", middleware.AdminAuthMiddleWare, Admin.OwnerHotels)
+		admin.GET("/hotelblockandunblock", middleware.AdminAuthMiddleWare, Admin.BlockandUnblockhotel)
+		admin.GET("/approvalpending", middleware.AdminAuthMiddleWare, Admin.HotelforApproval)
+		admin.GET("/hotelapproving", middleware.AdminAuthMiddleWare, Admin.HotelsApproval)
+
+		admin.GET("/viewusers", middleware.AdminAuthMiddleWare, Admin.ViewUser)
+		admin.GET("/viewblockedusers", middleware.AdminAuthMiddleWare, Admin.ViewBlockedUser)
+		admin.GET("/viewunblockedusers", middleware.AdminAuthMiddleWare, Admin.ViewUnblockedUsers)
+		admin.GET("/blockandunblockuser", middleware.AdminAuthMiddleWare, Admin.BlockandUnblockUser)
 	}
 }

@@ -2,7 +2,6 @@ package user
 
 import (
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	Init "github.com/shaikhzidhin/initiializer"
@@ -10,98 +9,63 @@ import (
 )
 
 // >>>>>>>>>>>>>> User HomePage <<<<<<<<<<<<<<<<<<<<<<<<<<
-
 func UserHome(c *gin.Context) {
+	var banner []models.Banner
+
+	if err := Init.DB.Preload("Hotels").Where("available = ? AND active = ?", true, true).Find(&banner).Error; err != nil {
+		c.JSON(400, gin.H{"error": "error while fetching banner"})
+		return
+	}
 	city := c.DefaultQuery("location", "")
 	if city == "" {
 		c.JSON(400, gin.H{"error": "location query parameter is missing"})
 		return
 	}
-	var hotels []models.Hotels
 
-	if err := Init.DB.Preload("HotelCategory").Where("city = ?", city).Find(&hotels).Error; err != nil {
-		c.JSON(400, gin.H{"error": "Error"})
-		return
+	page := c.DefaultQuery("page", "1")
+	limit := 10
+	pageInt := 1
+	if p, err := strconv.Atoi(page); err == nil {
+		pageInt = p
 	}
+
+	skip := (pageInt - 1) * limit
+
+	var hotels []models.Hotels
 	var rooms []models.Rooms
 
+	// Retrieve hotels based on the location and pagination
+	if err := Init.DB.Preload("HotelCategory").Offset(skip).Limit(limit).Where("city = ? AND is_available = ? AND isblock = ? AND adminapproval = ?", city, true, false, true).Find(&hotels).Error; err != nil {
+		c.JSON(400, gin.H{"error": "error while fetching hotels"})
+		return
+	}
+
+	// Retrieve rooms for each hotel
 	for i := range hotels {
+		var hotelRooms []models.Rooms
 
 		// Retrieve rooms for the current hotel
-		if err := Init.DB.Where("hotels_id = ?", hotels[i].ID).Find(&rooms).Error; err != nil {
-			// Handle the error, e.g., return an error response
+		if err := Init.DB.Where("hotel_id = ? AND is_available = ? AND isblocked = ? adminapproval = ?", hotels[i].ID, true, false, true).Find(&hotelRooms).Error; err != nil {
+			c.JSON(400, gin.H{"error": "error while fetching rooms"})
+			return
 		}
 
-		// Assign the rooms to the current hotel
-		// hotels[i].Rooms = rooms
+		// Append the rooms of the current hotel to the rooms slice
+		rooms = append(rooms, hotelRooms...)
 	}
 
-	c.JSON(200, gin.H{"Hotels": hotels, "rooms": rooms})
+	c.JSON(200, gin.H{"Hotels": hotels, "Rooms": rooms, "banners": banner})
 }
 
-// >>>>>>>>>>>>>> User Searched Result <<<<<<<<<<<<<<<<<<<<<<<<<<
+// >>>>>>>>>>>>>> Banner Showing <<<<<<<<<<<<<<<<<<<<<<<<<<
 
-func Searching(c *gin.Context) {
-	city := c.GetString("location")
+func BannerShowing(c *gin.Context) {
+	var banner []models.Banner
 
-	fromdatestr := c.GetString("from date")
-	if fromdatestr == "" {
-		c.JSON(400, gin.H{"error": "from date query parameter is missing"})
-		return
-	}
-	fromDate, err := time.Parse("2006-01-02", fromdatestr)
-	if err != nil {
-		c.JSON(400, gin.H{"error": "convert error"})
+	if err := Init.DB.Preload("Hotels").Where("available = ? AND active = ?", true, true).Find(&banner).Error; err != nil {
+		c.JSON(400, gin.H{"error": "banner retrireval error"})
 		return
 	}
 
-	todatestr := c.GetString("todate")
-	if todatestr == "" {
-		c.JSON(400, gin.H{"error": "To date query parameter is missing"})
-		return
-	}
-	toDate, err := time.Parse("2006-01-02", todatestr)
-	if err != nil {
-		c.JSON(400, gin.H{"error": "convert error"})
-		return
-	}
-
-	childrenStr := c.DefaultQuery("number_of_children", "")
-	if childrenStr == "" {
-		c.JSON(400, gin.H{"error": "number of children query parameter is missing"})
-		return
-	}
-	childrenNo, err := strconv.Atoi(childrenStr)
-	if err != nil {
-		c.JSON(400, gin.H{"error": "convert error"})
-		return
-	}
-
-	adultStr := c.DefaultQuery("number_of_adults", "")
-	if adultStr == "" {
-		c.JSON(400, gin.H{"error": "number of adults query parameter is missing"})
-		return
-	}
-	adultNo, err := strconv.Atoi(adultStr)
-	if err != nil {
-		c.JSON(400, gin.H{"error": "convert error"})
-		return
-	}
-
-	var hotels []models.Hotels
-	if err := Init.DB.Where("city = ?", city).Find(&hotels).Error; err != nil {
-		c.JSON(400, gin.H{"error": "fetching hotels"})
-		return
-	}
-
-	var rooms []models.Rooms
-	if err := Init.DB.Where("children >= ? AND adults >= ?", childrenNo, adultNo).
-		Where("isavailable = ? AND isblocked = ? AND adminapproval = ?", true, false, true).
-		Where("checkin <= ? AND checkout >= ?", toDate, fromDate).
-		Find(&rooms).Error; err != nil {
-		c.JSON(400, gin.H{"error": "fetching rooms"})
-		return
-	}
-
-	c.JSON(200, gin.H{"hotels": hotels, "rooms": rooms})
+	c.JSON(200, gin.H{"status": banner})
 }

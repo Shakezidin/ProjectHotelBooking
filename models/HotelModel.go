@@ -25,12 +25,19 @@ type Hotels struct {
 	Address         string        `json:"address" validate:"required"`
 	Images          string        `json:"images" validate:"required"`
 	TypesOfRoom     int           `json:"typesofroom" validate:"required"`
-	Fecilities      []string      `json:"facilities" gorm:"type:jsonb"`
+	Fecilities      []string      `json:"fecilities" gorm:"type:jsonb"`
 	Revenue         float64       `json:"revenue" gorm:"default=0"`
 	IsAvailable     bool          `json:"isAvailable" gorm:"default=false"`
 	IsBlock         bool          `json:"isBlock"`
 	AdminApproval   bool          `json:"adminApproval" gorm:"default=false"`
-	HotelCategoryId uint          `json:"category_id" gorm:"not null"`
-	HotelCategory   HotelCategory `gorm:"ForeignKey:HotelCategoryId"`
+	HotelCategoryID uint          `json:"category_id" gorm:"not null"`
+	HotelCategory   HotelCategory `gorm:"ForeignKey:HotelCategoryID"`
 	OwnerUsername   string
 }
+
+// type FeciltyAdd struct {
+// 	gorm.Model
+// 	HotelID uint	
+// 	FecilityId  uint
+// }
+

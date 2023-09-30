@@ -2,8 +2,8 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	Auth "github.com/shaikhzidhin/Auth"
 	"github.com/shaikhzidhin/controllers/HotelOwner"
+	"github.com/shaikhzidhin/middleware"
 )
 
 func OwnerRoutes(c *gin.Engine) {
@@ -17,26 +17,26 @@ func OwnerRoutes(c *gin.Engine) {
 	}
 	hotel := c.Group("/hotel")
 	{
-		hotel.GET("/hotelfecilities", Auth.AuthMiddleWare, HotelOwner.ViewHotelFecilities)
-		hotel.POST("/addhotel", Auth.AuthMiddleWare, HotelOwner.AddHotel)
-		hotel.GET("/viewhotels", Auth.AuthMiddleWare, HotelOwner.ViewHotels)
-		hotel.GET("/viewhotel", Auth.AuthMiddleWare, HotelOwner.ViewSpecificHotel)
-		hotel.PATCH("/edit", Auth.AuthMiddleWare, HotelOwner.Hoteledit)
-		hotel.DELETE("/delete", Auth.AuthMiddleWare, HotelOwner.DeleteHotel)
-		hotel.GET("/hotelavailability", Auth.AuthMiddleWare, HotelOwner.HotelAvailability)
+		hotel.GET("/hotelfecilities", middleware.AuthMiddleWare, HotelOwner.ViewHotelFecilities)
+		hotel.POST("/addhotel", middleware.AuthMiddleWare, HotelOwner.AddHotel)
+		hotel.GET("/viewhotels", middleware.AuthMiddleWare, HotelOwner.ViewHotels)
+		hotel.GET("/viewhotel", middleware.AuthMiddleWare, HotelOwner.ViewSpecificHotel)
+		hotel.PATCH("/edit", middleware.AuthMiddleWare, HotelOwner.Hoteledit)
+		hotel.DELETE("/delete", middleware.AuthMiddleWare, HotelOwner.DeleteHotel)
+		hotel.GET("/hotelavailability", middleware.AuthMiddleWare, HotelOwner.HotelAvailability)
 	}
 	room := c.Group("/room")
 	{
-		room.GET("/fecilities", Auth.AuthMiddleWare, HotelOwner.ViewRoomfecilities)
-		room.GET("/cancellation", Auth.AuthMiddleWare, HotelOwner.ViewCancellation)
-		room.GET("/category", Auth.AuthMiddleWare, HotelOwner.ViewRoomCatagory)
-		room.GET("/add", Auth.AuthMiddleWare, HotelOwner.AddRoom)
-		room.POST("/adding", Auth.AuthMiddleWare, HotelOwner.AddingRoom)
-		room.PATCH("/edit", Auth.AuthMiddleWare, HotelOwner.EditRoom)
-		room.GET("/viewrooms", Auth.AuthMiddleWare, HotelOwner.ViewRooms)
-		room.GET("/viewspecificroom", Auth.AuthMiddleWare, HotelOwner.ViewspecificRoom)
-		room.DELETE("/delete", Auth.AuthMiddleWare, HotelOwner.DeleteRoom)
-		room.GET("/availability", Auth.AuthMiddleWare, HotelOwner.RoomAvailability)
+		room.GET("/fecilities", middleware.AuthMiddleWare, HotelOwner.ViewRoomfecilities)
+		room.GET("/cancellation", middleware.AuthMiddleWare, HotelOwner.ViewCancellation)
+		room.GET("/category", middleware.AuthMiddleWare, HotelOwner.ViewRoomCatagory)
+		room.GET("/add", middleware.AuthMiddleWare, HotelOwner.AddRoom)
+		room.POST("/adding", middleware.AuthMiddleWare, HotelOwner.AddingRoom)
+		room.PATCH("/edit", middleware.AuthMiddleWare, HotelOwner.EditRoom)
+		room.GET("/viewrooms", middleware.AuthMiddleWare, HotelOwner.ViewRooms)
+		room.GET("/viewspecificroom", middleware.AuthMiddleWare, HotelOwner.ViewspecificRoom)
+		room.DELETE("/delete", middleware.AuthMiddleWare, HotelOwner.DeleteRoom)
+		room.GET("/availability", middleware.AuthMiddleWare, HotelOwner.RoomAvailability)
 	}
 
 }

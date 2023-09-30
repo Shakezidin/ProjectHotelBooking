@@ -2,14 +2,10 @@ package auth
 
 import (
 	"errors"
-	"net/http"
 	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/gin-gonic/gin"
-	Init "github.com/shaikhzidhin/initiializer"
-	"github.com/shaikhzidhin/models"
 )
 
 var JwtKey = []byte("SUPER-SECRET")
@@ -62,61 +58,4 @@ func Authentication(SignedStringtoken string) (string, error) {
 		return "", err
 	}
 	return username, nil
-}
-
-func AuthMiddleWare(c *gin.Context) {
-	header := c.Request.Header.Get("Authorization")
-	rslt, err := Trim(header)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "trim error"})
-		c.Abort()
-		return
-	}
-	var owner models.Owner
-	result := Init.DB.Where("user_name = ?", rslt).First(&owner)
-	if result.Error != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "username not found"})
-		c.Abort()
-		return
-	}
-
-	c.Next()
-}
-
-func UserAuthMiddleWare(c *gin.Context) {
-	header := c.Request.Header.Get("Authorization")
-	rslt, err := Trim(header)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "trim error"})
-		c.Abort()
-		return
-	}
-	var user models.User
-	result := Init.DB.Where("user_name = ?", rslt).First(&user)
-	if result.Error != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "username not found"})
-		c.Abort()
-		return
-	}
-
-	c.Next()
-}
-
-func AdminAuthMiddleWare(c *gin.Context) {
-	header := c.Request.Header.Get("Authorization")
-	rslt, err := Trim(header)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "trim error"})
-		c.Abort()
-		return
-	}
-	var admin models.Admin
-	result := Init.DB.Where("user_name = ?", rslt).First(&admin)
-	if result.Error != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "admin not found"})
-		c.Abort()
-		return
-	}
-
-	c.Next()
 }

@@ -2,8 +2,8 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	Auth "github.com/shaikhzidhin/Auth"
 	User "github.com/shaikhzidhin/controllers/User"
+	"github.com/shaikhzidhin/middleware"
 )
 
 func UserRoutes(c *gin.Engine) {
@@ -12,19 +12,26 @@ func UserRoutes(c *gin.Engine) {
 		user.POST("/signup", User.UserSignup)
 		user.POST("/signup-verification", User.SingupVerification)
 		user.POST("/login", User.UserLogin)
-	}
+		user.POST("/forgetpassword",User.ForgetPassword)
+		user.POST("/verifyotp",User.VerifyOTP)
+		user.POST("/setnewpassword",User.Newpassword)
+	
+		user.GET("/profile", middleware.UserAuthMiddleWare, User.Profile)
+		user.PATCH("/editprofile", middleware.UserAuthMiddleWare, User.ProfileEdit)
+		user.PUT("/changepassword", middleware.UserAuthMiddleWare, User.PasswordChange)
+		
+		user.GET("/homepage", User.UserHome)
+		user.GET("/banner",User.BannerShowing)
+		user.POST("/searchresult",User.Searching)
+		user.GET("/seerooms",User.RoomsView)
+		user.GET("/seeroom",User.RoomDetails)
 
-	profile := c.Group("/userprofile")
-	{
-		profile.Use(Auth.AuthMiddleWare)
-		profile.GET("/profile", Auth.UserAuthMiddleWare, User.Profile)
-		profile.PATCH("/editprofile",Auth.UserAuthMiddleWare, User.ProfileEdit)
-		profile.POST("/changepassword",Auth.UserAuthMiddleWare,User.PasswordChange)
-	}
+		user.POST("/roomfilter",User.RoomFilter)
 
-	home:=c.Group("/userhome")
-	{
-		home.GET("/homepage",User.UserHome)
-		home.GET("/searchresult",Auth.UserAuthMiddleWare,User.Searching)
+		user.POST("/searchhotel",User.SearchHotel)
+
+		user.GET("/book",middleware.UserAuthMiddleWare,User.Book)
+		user.GET("/viewcoupens",middleware.UserAuthMiddleWare,User.Coupons)
+		user.GET("/applycoupen",middleware.UserAuthMiddleWare,User.ApplyCoupon)
 	}
 }

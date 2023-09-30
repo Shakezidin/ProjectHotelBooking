@@ -16,10 +16,8 @@ func ViewHotelCatagories(c *gin.Context) {
 		c.JSON(400, gin.H{"msg": err.Error()})
 		return
 	}
-	// var hotel models.Hotel
 	c.JSON(200, gin.H{
 		"fecilities": catagories,
-		// "hotel": hotel,
 	})
 }
 

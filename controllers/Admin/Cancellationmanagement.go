@@ -18,7 +18,7 @@ func ViewRoomCancellation(c *gin.Context) {
 	}
 	// var hotel models.Hotel
 	c.JSON(200, gin.H{
-		"fecilities": cancellation,
+		"cancellation": cancellation,
 		// "hotel": hotel,
 	})
 }

@@ -10,63 +10,63 @@ import (
 	"github.com/shaikhzidhin/models"
 )
 
-func ViewHotelFecilities(c *gin.Context) {
-	var fecilities []models.HotelAmenities
-	if err := Init.DB.Find(&fecilities).Error; err != nil {
+func ViewRoomCatagory(c *gin.Context) {
+	var catagories []models.RoomCategory
+	if err := Init.DB.Find(&catagories).Error; err != nil {
 		c.JSON(400, gin.H{"msg": err.Error()})
 		return
 	}
 	// var hotel models.Hotel
 	c.JSON(200, gin.H{
-		"fecilities": fecilities,
+		"fecilities": catagories,
 		// "hotel": hotel,
 	})
 }
 
-func AddHotelfecilility(c *gin.Context) {
-	var fecility models.HotelAmenities
+func AddRoomCatagory(c *gin.Context) {
+	var catagories models.RoomCategory
 
-	if err := c.ShouldBindJSON(&fecility); err != nil {
+	if err := c.ShouldBindJSON(&catagories); err != nil {
 		c.JSON(400, gin.H{"error": "Binding error"})
 		return
 	}
 
-	validationErr := validate.Struct(fecility)
+	validationErr := validate.Struct(catagories)
 	if validationErr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "validation error1"})
 		return
 	}
 
-	record := Init.DB.Create(&fecility)
+	record := Init.DB.Create(&catagories)
 	if record.Error != nil {
 		// Log the error for debugging purposes.
 		fmt.Println("Database error:", record.Error)
 
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Error occurred while creating fecility",
+			"message": "Error occurred while creating catagories",
 			"error":   record.Error.Error(), // Include the specific database error message.
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "fecility create Success",
+		"message": "catagories create Success",
 	})
 }
 
-func DeleteHotelfecility(c *gin.Context) {
-	fecilityIDStr := c.DefaultQuery("fecilityid", "")
-	if fecilityIDStr == "" {
-		c.JSON(400, gin.H{"error": "hotelid query parameter is missing"})
+func DeleteRoomCatagories(c *gin.Context) {
+	catatagoryIDStr := c.DefaultQuery("catagoryid", "")
+	if catatagoryIDStr == "" {
+		c.JSON(400, gin.H{"error": "catagoryId query parameter is missing"})
 		return
 	}
-	fecilityID, err := strconv.Atoi(fecilityIDStr)
+	catagoryID, err := strconv.Atoi(catatagoryIDStr)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "convert error"})
 		return
 	}
 
-	if err := Init.DB.Where("fecilityid = ?", uint(fecilityID)).Delete(&models.HotelAmenities{}).Error; err != nil {
+	if err := Init.DB.Where("id = ?", uint(catagoryID)).Delete(&models.RoomCategory{}).Error; err != nil {
 		c.JSON(400, gin.H{"Error": "delete error"})
 		return
 	}

@@ -14,9 +14,8 @@ type Cancellation struct {
 type AvailableRoom struct {
 	gorm.Model
 	RoomID      uint        `json:"room_id"`
-	RoomNo      uint        `json:"room_no"`
-	CheckIn     []time.Time `gorm:"type:jsonb" json:"check_in"`
-	Checkout    []time.Time `gorm:"type:jsonb" json:"checkout"`
+	CheckIn     []time.Time `gorm:"type:timestamp[]" json:"check_in"`
+	Checkout    []time.Time `gorm:"type:timestamp[]" json:"checkout"`
 	IsAvailable bool        `json:"is_available"`
 }
 
@@ -32,25 +31,24 @@ type RoomCategory struct {
 
 type Rooms struct {
 	gorm.Model
-	Description    string          `json:"description" gorm:"not null"`
-	Price          float64         `json:"price" gorm:"not null"`
-	Adults         uint            `json:"adults" gorm:"not null"`
-	Children       uint            `json:"children" gorm:"not null"`
-	Bed            string          `json:"bed" gorm:"not null"`
-	Images         string          `json:"images" validate:"required"`
-	CancellationId uint            `json:"cancellation_id" gorm:"not null"`
-	Cancellation   Cancellation    `gorm:"ForeignKey:CancellationId"`
-	NoOfRooms      uint            `json:"number_of_rooms" gorm:"default:1"`
-	AvailableRooms []AvailableRoom `json:"available_rooms" gorm:"foreignKey:RoomID"`
-	Fecilities     []string        `json:"facilities" gorm:"type:jsonb"`
-	IsAvailable    bool            `json:"is_available"`
-	IsBlocked      bool            `json:"is_blocked"`
-	DiscountPrice  float64         `json:"discount_price"`
-	Discount       float64         `json:"discount"`
-	AdminApproval  bool            `json:"admin_approval" gorm:"default=false"`
-	HotelsId       uint            `json:"hotel_id"`
-	Hotels         Hotels          `gorm:"ForeignKey:HotelsId"`
-	OwnerUsername  string          `json:"owner_username"`
-	RoomCategoryId uint            `json:"category_id" gorm:"not null"`
-	RoomCategory   RoomCategory    `gorm:"ForeignKey:RoomCategoryId"`
+	Description    string       `json:"description" validate:"required" gorm:"not null"`
+	Price          float64      `json:"price" gorm:"not null" validate:"required"`
+	Adults         int          `json:"adults" gorm:"not null" validate:"required"`
+	Children       int          `json:"children" gorm:"not null" validate:"required"`
+	Bed            string       `json:"bed" gorm:"not null" validate:"required"`
+	Images         string       `json:"images" validate:"required"`
+	CancellationId uint         `json:"cancellation_id" gorm:"not null"`
+	Cancellation   Cancellation `gorm:"ForeignKey:CancellationId"`
+	Fecilities      []string      `json:"fecilities" gorm:"type:jsonb"`
+	RoomNo         int
+	IsAvailable    bool         `json:"is_available" validate:"required"`
+	IsBlocked      bool         `json:"is_blocked"`
+	DiscountPrice  float64      `json:"discount_price"`
+	Discount       float64      `json:"discount"`
+	AdminApproval  bool         `json:"admin_approval" gorm:"default=false"`
+	HotelsId       uint         `json:"hotel_id"`
+	Hotels         Hotels       `gorm:"ForeignKey:HotelsId"`
+	OwnerUsername  string       `json:"owner_username"`
+	RoomCategoryId uint         `json:"category_id" gorm:"not null"`
+	RoomCategory   RoomCategory `gorm:"ForeignKey:RoomCategoryId"`
 }

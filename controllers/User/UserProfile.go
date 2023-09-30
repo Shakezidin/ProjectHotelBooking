@@ -130,3 +130,15 @@ func PasswordChange(c *gin.Context) {
 }
 
 //you can add history booking here
+
+func History(c *gin.Context) {
+	userId := c.GetUint("userid")
+	var booking models.Booking
+
+	if err := Init.DB.Where("userid = ?", userId).Find(&booking).Error; err != nil {
+		c.JSON(400, gin.H{"Error": "error while etching booking"})
+		return
+	}
+
+	c.JSON(200, gin.H{"history": booking})
+}

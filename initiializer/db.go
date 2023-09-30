@@ -24,6 +24,8 @@ func Database_connection() {
 		&models.Cancellation{},
 		&models.RoomFecilities{},
 		&models.RoomCategory{},
+		&models.Review{},
+		&models.Report{},
 		&models.Rooms{},
 		&models.HotelCategory{},
 		&models.AvailableRoom{},
@@ -31,5 +33,9 @@ func Database_connection() {
 		&models.HotelAmenities{},
 		&models.Hotels{},
 		&models.User{},
+		&models.Coupon{},
+		&models.UsedCoupen{},
+		&models.Booking{},
+		&models.Banner{},
 	)
 }

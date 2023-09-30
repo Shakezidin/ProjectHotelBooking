@@ -10,7 +10,8 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	auth "github.com/shaikhzidhin/Auth"
-	"github.com/shaikhzidhin/controllers"
+	controllers "github.com/shaikhzidhin/controllers/Otp"
+
 	"github.com/shaikhzidhin/initiializer"
 	Init "github.com/shaikhzidhin/initiializer"
 	"github.com/shaikhzidhin/models"
@@ -23,7 +24,7 @@ var validate = validator.New()
 func OwnerSignUp(c *gin.Context) {
 	var owner models.Owner
 
-	time.Sleep(time.Second*10)
+	time.Sleep(time.Second * 10)
 
 	if err := c.ShouldBindJSON(&owner); err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{

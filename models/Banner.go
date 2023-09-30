@@ -12,8 +12,8 @@ type Banner struct {
 	LinkTo    string `json:"link_to" gorm:"not null"`
 	Available bool   `json:"available" gorm:"default:true"`
 	Active    bool   `json:"active" gorm:"default:false"`
-	OwnerID   Owner  `gorm:"foreignkey:User_Id"`
-	User_Id   uint   `json:"owner_id" `
-	HotelID   Hotels  `gorm:"foreignkey:ID"`
-	ID        uint   `json:"hotel_id" `
+	OwnerID   uint   `json:"owner_id" `
+	Owner     Owner  `gorm:"ForeignKey:OwnerID"`
+	HotelsId  uint   `json:"hotel_id"`
+	Hotels    Hotels `gorm:"ForeignKey:HotelsId"`
 }

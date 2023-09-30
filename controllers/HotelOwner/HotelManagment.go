@@ -26,7 +26,7 @@ func ViewHotelFecilities(c *gin.Context) {
 // >>>>>>>>>>>>>> Add hotel <<<<<<<<<<<<<<<<<<<<<<<<<<
 func AddHotel(c *gin.Context) {
 	var hotel models.Hotels
-	if err := c.BindJSON(&hotel); err != nil {
+	if err := c.ShouldBindJSON(&hotel); err != nil {
 		c.JSON(400, gin.H{
 			"msg":   "binding error1",
 			"error": err,
@@ -71,7 +71,7 @@ func ViewHotels(c *gin.Context) {
 		c.JSON(404, gin.H{"error": "username didnt get"})
 		return
 	}
-	if err := Init.DB.Where("owner_username = ?", username).Find(&hotel).Error; err != nil {
+	if err := Init.DB.Preload("HotelCategory").Where("owner_username = ?", username).Find(&hotel).Error; err != nil {
 		c.JSON(500, gin.H{"error": "Internal Server Error"})
 		return
 	}
@@ -250,5 +250,7 @@ func HotelAvailability(c *gin.Context) {
 		return
 	}
 
-	c.Status(200)
+	c.JSON(200,gin.H{
+		"status":"availability updated",
+	})
 }
