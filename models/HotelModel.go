@@ -1,6 +1,10 @@
 package models
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
+
 	"gorm.io/gorm"
 )
 
@@ -14,6 +18,20 @@ type HotelAmenities struct {
 	HotelAmenities string `json:"amenities" gorm:"not null"`
 }
 
+type JSONB []interface{}
+
+func (a JSONB) Value() (driver.Value, error) {
+	return json.Marshal(a)
+}
+
+func (a *JSONB) Scan(value interface{}) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+	return json.Unmarshal(b, &a)
+}
+
 type Hotels struct {
 	gorm.Model
 	Name            string        `json:"name" validate:"required"`
@@ -25,7 +43,7 @@ type Hotels struct {
 	Address         string        `json:"address" validate:"required"`
 	Images          string        `json:"images" validate:"required"`
 	TypesOfRoom     int           `json:"typesofroom" validate:"required"`
-	Fecilities      []string      `json:"fecilities" gorm:"type:jsonb"`
+	Fecility        JSONB         `gorm:"type:jsonb" json:"fecilities"`
 	Revenue         float64       `json:"revenue" gorm:"default=0"`
 	IsAvailable     bool          `json:"isAvailable" gorm:"default=false"`
 	IsBlock         bool          `json:"isBlock"`
@@ -34,10 +52,3 @@ type Hotels struct {
 	HotelCategory   HotelCategory `gorm:"ForeignKey:HotelCategoryID"`
 	OwnerUsername   string
 }
-
-// type FeciltyAdd struct {
-// 	gorm.Model
-// 	HotelID uint	
-// 	FecilityId  uint
-// }
-

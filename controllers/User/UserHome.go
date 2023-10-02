@@ -35,7 +35,7 @@ func UserHome(c *gin.Context) {
 	var rooms []models.Rooms
 
 	// Retrieve hotels based on the location and pagination
-	if err := Init.DB.Preload("HotelCategory").Offset(skip).Limit(limit).Where("city = ? AND is_available = ? AND isblock = ? AND adminapproval = ?", city, true, false, true).Find(&hotels).Error; err != nil {
+	if err := Init.DB.Preload("HotelCategory").Offset(skip).Limit(limit).Where("city = ? AND is_available = ? AND is_block = ? AND admin_approval = ?", city, true, false, true).Find(&hotels).Error; err != nil {
 		c.JSON(400, gin.H{"error": "error while fetching hotels"})
 		return
 	}
@@ -45,7 +45,7 @@ func UserHome(c *gin.Context) {
 		var hotelRooms []models.Rooms
 
 		// Retrieve rooms for the current hotel
-		if err := Init.DB.Where("hotel_id = ? AND is_available = ? AND isblocked = ? adminapproval = ?", hotels[i].ID, true, false, true).Find(&hotelRooms).Error; err != nil {
+		if err := Init.DB.Preload("Cancellation").Preload("Hotels").Preload("RoomCategory").Where("hotels_id = ? AND is_available = ? AND is_blocked = ? AND admin_approval = ?", hotels[i].ID, true, false, true).Find(&hotelRooms).Error; err != nil {
 			c.JSON(400, gin.H{"error": "error while fetching rooms"})
 			return
 		}

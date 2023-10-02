@@ -39,15 +39,15 @@ type Rooms struct {
 	Images         string       `json:"images" validate:"required"`
 	CancellationId uint         `json:"cancellation_id" gorm:"not null"`
 	Cancellation   Cancellation `gorm:"ForeignKey:CancellationId"`
-	Fecilities      []string      `json:"fecilities" gorm:"type:jsonb"`
+	Fecility       JSONB        `gorm:"type:jsonb" json:"fecilities"`
 	RoomNo         int
 	IsAvailable    bool         `json:"is_available" validate:"required"`
 	IsBlocked      bool         `json:"is_blocked"`
 	DiscountPrice  float64      `json:"discount_price"`
 	Discount       float64      `json:"discount"`
 	AdminApproval  bool         `json:"admin_approval" gorm:"default=false"`
-	HotelsId       uint         `json:"hotel_id"`
-	Hotels         Hotels       `gorm:"ForeignKey:HotelsId"`
+	HotelsId       uint         `json:"hotel_id" gorm:"not null"`
+	Hotels         Hotels       `gorm:"ForeignKey:HotelsId" `
 	OwnerUsername  string       `json:"owner_username"`
 	RoomCategoryId uint         `json:"category_id" gorm:"not null"`
 	RoomCategory   RoomCategory `gorm:"ForeignKey:RoomCategoryId"`

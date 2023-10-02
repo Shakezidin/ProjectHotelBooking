@@ -11,6 +11,11 @@ import (
 
 func UserAuthMiddleWare(c *gin.Context) {
 	header := c.Request.Header.Get("Authorization")
+	if header == "" {
+		c.JSON(400, gin.H{"error": "token missing"})
+		c.Abort()
+		return
+	}
 	rslt, err := auth.Trim(header)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "trim error"})

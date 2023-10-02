@@ -1,6 +1,7 @@
 package HotelOwner
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -34,6 +35,8 @@ func AddHotel(c *gin.Context) {
 		c.Abort()
 		return
 	}
+
+	fmt.Println(hotel)
 	validationErr := validate.Struct(hotel)
 	if validationErr != nil {
 		c.JSON(400, gin.H{
@@ -250,7 +253,7 @@ func HotelAvailability(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200,gin.H{
-		"status":"availability updated",
+	c.JSON(200, gin.H{
+		"status": "availability updated",
 	})
 }

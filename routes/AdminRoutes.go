@@ -38,11 +38,22 @@ func AdminRoutes(c *gin.Engine) {
 		admin.GET("/viewowners", middleware.AdminAuthMiddleWare, Admin.ViewOwner)
 		admin.GET("/blockowner", middleware.AdminAuthMiddleWare, Admin.BlockOwner)
 
+		admin.GET("viewbanners", middleware.AdminAuthMiddleWare, Admin.BannerView)
+		admin.GET("banneractivate", middleware.AdminAuthMiddleWare, Admin.BannerSetActive)
+		admin.GET("viewbanner", middleware.AdminAuthMiddleWare, Admin.BannerDetails)
+		admin.GET("deletebanner", middleware.AdminAuthMiddleWare, Admin.DeleteBanner)
+
 		admin.GET("/viewblockedhotels", middleware.AdminAuthMiddleWare, Admin.BlockedHotels)
 		admin.GET("/ownershotels", middleware.AdminAuthMiddleWare, Admin.OwnerHotels)
 		admin.GET("/hotelblockandunblock", middleware.AdminAuthMiddleWare, Admin.BlockandUnblockhotel)
 		admin.GET("/approvalpending", middleware.AdminAuthMiddleWare, Admin.HotelforApproval)
 		admin.GET("/hotelapproving", middleware.AdminAuthMiddleWare, Admin.HotelsApproval)
+
+		admin.GET("/viewblockedrooms", middleware.AdminAuthMiddleWare, Admin.BlockedRooms)
+		admin.GET("/ownersrooms", middleware.AdminAuthMiddleWare, Admin.OwnerRooms)
+		admin.GET("/roomblockandunblock", middleware.AdminAuthMiddleWare, Admin.BlockandUnblockRooms)
+		admin.GET("/roomapprovalpending", middleware.AdminAuthMiddleWare, Admin.RoomsforApproval)
+		admin.GET("/roomapproving", middleware.AdminAuthMiddleWare, Admin.RoomsApproval)
 
 		admin.GET("/viewusers", middleware.AdminAuthMiddleWare, Admin.ViewUser)
 		admin.GET("/viewblockedusers", middleware.AdminAuthMiddleWare, Admin.ViewBlockedUser)

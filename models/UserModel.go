@@ -14,6 +14,6 @@ type User struct {
 	Is_Block     bool      `json:"is_block" gorm:"default:false"`
 	Validation   bool      `json:"validation" gorm:"default:false"`
 	Wallet       int       `json:"wallet" gorm:"default=0"`
-	ReferralCode string    `json:"referral_code" gorm:"unique"`
+	ReferralCode string    `json:"referral_code"`
 	JoinedAt     time.Time `json:"joined_at" gorm:"default:now()"`
 }

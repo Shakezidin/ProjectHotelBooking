@@ -119,7 +119,7 @@ func SingupVerification(c *gin.Context) {
 		} else {
 			result := initiializer.DB.Create(&userData)
 			if result.Error != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"status": "false", "Error": result.Error})
+				c.JSON(http.StatusBadRequest, gin.H{"status": "falsee", "Error": result.Error})
 				return
 			}
 		}

@@ -13,7 +13,6 @@ import (
 
 func Profile(c *gin.Context) {
 	var user models.User
-
 	header := c.Request.Header.Get("Authorization")
 	username, err := Auth.Trim(header)
 	if err != nil {
@@ -71,6 +70,18 @@ func ProfileEdit(c *gin.Context) {
 		return
 	}
 
+	if updateuser.Email == "" {
+		updateuser.Email = user.Email
+	}
+
+	if updateuser.Phone == "" {
+		updateuser.Phone = user.Phone
+	}
+
+	if updateuser.Name == "" {
+		updateuser.Name = user.Name
+	}
+
 	user.Name = updateuser.Name
 	user.Email = updateuser.Email
 	user.Phone = updateuser.Phone
@@ -110,12 +121,22 @@ func PasswordChange(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	if user.Password != pswrd.Old_password {
-		c.JSON(400, gin.H{"error": "Password Incorrect"})
+
+	if err := user.CheckPassword(pswrd.Old_password); err != nil {
+		c.JSON(400, gin.H{
+			"msg": "password incorrect",
+		})
 		return
 	}
 
-	user.Password = pswrd.New_password
+
+	if err := user.HashPassword(pswrd.New_password); err != nil {
+		c.JSON(400, gin.H{
+			"msg": "hashing error",
+		})
+		c.Abort()
+		return
+	}
 
 	result := Init.DB.Save(&user)
 	if result.Error != nil {

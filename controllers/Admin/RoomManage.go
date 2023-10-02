@@ -11,8 +11,8 @@ import (
 func BlockedRooms(c *gin.Context) {
 	var room models.Rooms
 
-	if err := Init.DB.Where("is_block", true).Find(&room).Error; err != nil {
-		c.JSON(400, gin.H{"error": "fetching blocked hotels error"})
+	if err := Init.DB.Preload("Cancellation").Preload("Hotels").Preload("RoomCategory").Where("is_blocked", true).Find(&room).Error; err != nil {
+		c.JSON(400, gin.H{"error": "fetching blocked rooms error"})
 		return
 	}
 
@@ -27,7 +27,7 @@ func OwnerRooms(c *gin.Context) {
 	}
 	var rooms []models.Rooms
 
-	if err := Init.DB.Where("owner_username = ?", username).Find(&rooms).Error; err != nil {
+	if err := Init.DB.Preload("Cancellation").Preload("Hotels").Preload("RoomCategory").Where("owner_username = ?", username).Find(&rooms).Error; err != nil {
 		c.JSON(400, gin.H{"error": err})
 		return
 	}
@@ -69,7 +69,7 @@ func BlockandUnblockRooms(c *gin.Context) {
 func RoomsforApproval(c *gin.Context) {
 	var rooms models.Rooms
 
-	if err := Init.DB.Preload("RoomCategory").Where("admin_approval = ?", false).Find(&rooms).Error; err != nil {
+	if err := Init.DB.Preload("Cancellation").Preload("Hotels").Preload("RoomCategory").Where("admin_approval = ?", false).Find(&rooms).Error; err != nil {
 		c.JSON(400, gin.H{"error": err})
 		return
 	}

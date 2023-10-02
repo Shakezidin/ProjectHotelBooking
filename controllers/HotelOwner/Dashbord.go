@@ -10,34 +10,39 @@ import (
 )
 
 func GetOwnerDashboard(c *gin.Context) {
-	ownerId := c.MustGet("userID").(uint)
-
 	var hotelsCount, roomsCount int64
 	var bookings []models.Booking
-	var owner models.Owner
 
 	db := Init.DB
 
+	header := c.Request.Header.Get("Authorization")
+	username, err := Auth.Trim(header)
+	if err != nil {
+		c.JSON(404, gin.H{"error": "username didnt get"})
+		return
+	}
+
+	var owner models.Owner
+
+	if err := Init.DB.Where("username = ?", username).First(&owner); err != nil {
+		c.JSON(400, gin.H{"Error": "Error while fetcing owner"})
+		return
+	}
+
 	// Retrieve the count of hotels and rooms owned by the owner
-	if err := db.Model(&models.Hotels{}).Where("owner_id = ?", ownerId).Count(&hotelsCount).Error; err != nil {
+	if err := db.Model(&models.Hotels{}).Where("owner_username = ?", owner.UserName).Count(&hotelsCount).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Error": "Error while fetchin hotels count"})
 		return
 	}
 
-	if err := db.Model(&models.Rooms{}).Where("owner_id = ?", ownerId).Count(&roomsCount).Error; err != nil {
+	if err := db.Model(&models.Rooms{}).Where("owner_username = ?", owner.UserName).Count(&roomsCount).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Error": "Error while fetchin rooms count"})
 		return
 	}
 
 	// Retrieve bookings for the owner
-	if err := db.Preload("Hotel").Preload("User").Preload("Room").Where("owner_id = ?", ownerId).Find(&bookings).Error; err != nil {
-		c.HTML(http.StatusInternalServerError, "500.tmpl", nil)
-		return
-	}
-
-	// Retrieve owner details
-	if err := db.First(&owner, ownerId).Error; err != nil {
-		c.HTML(http.StatusInternalServerError, "500.tmpl", nil)
+	if err := db.Preload("Hotel").Preload("User").Preload("Room").Where("owner_id = ?", owner.ID).Find(&bookings).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"Error": "Error while fetching bookings"})
 		return
 	}
 
