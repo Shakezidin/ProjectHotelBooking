@@ -1,7 +1,6 @@
 package HotelOwner
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -36,7 +35,6 @@ func AddHotel(c *gin.Context) {
 		return
 	}
 
-	fmt.Println(hotel)
 	validationErr := validate.Struct(hotel)
 	if validationErr != nil {
 		c.JSON(400, gin.H{
@@ -86,7 +84,7 @@ func ViewHotels(c *gin.Context) {
 
 // >>>>>>>>>>>>>> view specific hotel <<<<<<<<<<<<<<<<<<<<<<<<<<
 func ViewSpecificHotel(c *gin.Context) {
-	hotelIDStr := c.DefaultQuery("hotelid", "")
+	hotelIDStr := c.DefaultQuery("id", "")
 	if hotelIDStr == "" {
 		c.JSON(400, gin.H{"error": "hotelid query parameter is missing"})
 		return
@@ -98,13 +96,7 @@ func ViewSpecificHotel(c *gin.Context) {
 	}
 	var hotel models.Hotels
 
-	header := c.Request.Header.Get("Authorization")
-	username, err := Auth.Trim(header)
-	if err != nil {
-		c.JSON(404, gin.H{"error": "username didnt get"})
-		return
-	}
-	if err := Init.DB.Where("owner_username = ? AND id = ?", username, uint(hotelId)).First(&hotel).Error; err != nil {
+	if err := Init.DB.Where("id = ?", uint(hotelId)).First(&hotel).Error; err != nil {
 		c.JSON(500, gin.H{
 			"msg": err.Error(),
 		})
@@ -116,10 +108,10 @@ func ViewSpecificHotel(c *gin.Context) {
 	})
 }
 
-// >>>>>>>>>>>>>> edited hotel details saving <<<<<<<<<<<<<<<<<<<<<<<<<<
+// >>>>>>>>>>>>>> hotel Update <<<<<<<<<<<<<<<<<<<<<<<<<<
 
 func Hoteledit(c *gin.Context) {
-	hotelIDStr := c.DefaultQuery("hotelid", "")
+	hotelIDStr := c.DefaultQuery("id", "")
 	if hotelIDStr == "" {
 		c.JSON(400, gin.H{"error": "hotelid query parameter is missing"})
 		return
@@ -188,13 +180,49 @@ func Hoteledit(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, gin.H{"status": "success"})
+	c.JSON(200, gin.H{"status": "hotel updation success"})
+}
+
+// >>>>>>>>>>>>>> hotel availability <<<<<<<<<<<<<<<<<<<<<<<<<<
+
+func HotelAvailability(c *gin.Context) {
+	hotelIDStr := c.DefaultQuery("id", "")
+	if hotelIDStr == "" {
+		c.JSON(400, gin.H{"error": "hotelid query parameter is missing"})
+		return
+	}
+	hotelId, err := strconv.Atoi(hotelIDStr)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "convert error"})
+		return
+	}
+
+	var hotel models.Hotels
+	if err := Init.DB.First(&hotel, hotelId).Error; err != nil {
+		c.JSON(404, gin.H{
+			"error": "Room not found",
+		})
+		return
+	}
+
+	hotel.IsAvailable = !hotel.IsAvailable
+
+	if err := Init.DB.Save(&hotel).Error; err != nil {
+		c.JSON(500, gin.H{
+			"error": "Failed to save Room availability",
+		})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"status": "hotel availability updated",
+	})
 }
 
 // >>>>>>>>>>>>>> delete hotel<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 func DeleteHotel(c *gin.Context) {
-	hotelIDStr := c.DefaultQuery("hotelid", "")
+	hotelIDStr := c.DefaultQuery("id", "")
 	if hotelIDStr == "" {
 		c.JSON(400, gin.H{"error": "hotelid query parameter is missing"})
 		return
@@ -221,39 +249,4 @@ func DeleteHotel(c *gin.Context) {
 		return
 	}
 	c.JSON(200, gin.H{"msg": "deleted"})
-}
-
-func HotelAvailability(c *gin.Context) {
-	hotelIDStr := c.DefaultQuery("hotelid", "")
-	if hotelIDStr == "" {
-		c.JSON(400, gin.H{"error": "hotelid query parameter is missing"})
-		return
-	}
-	hotelId, err := strconv.Atoi(hotelIDStr)
-	if err != nil {
-		c.JSON(400, gin.H{"error": "convert error"})
-		return
-	}
-
-	var hotel models.Hotels
-	if err := Init.DB.First(&hotel, hotelId).Error; err != nil {
-		c.JSON(404, gin.H{
-			"hello": "Hot",
-			"error": "Room not found",
-		})
-		return
-	}
-
-	hotel.IsAvailable = !hotel.IsAvailable
-
-	if err := Init.DB.Save(&hotel).Error; err != nil {
-		c.JSON(500, gin.H{
-			"error": "Failed to save Room availability",
-		})
-		return
-	}
-
-	c.JSON(200, gin.H{
-		"status": "availability updated",
-	})
 }

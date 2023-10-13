@@ -20,7 +20,7 @@ func Profile(c *gin.Context) {
 		return
 	}
 
-	if err := Init.DB.Where("user_name = ?", username).First(&user).Error; err != nil {
+	if err := Init.DB.Preload("Wallet").Where("user_name = ?", username).First(&user).Error; err != nil {
 		c.JSON(400, gin.H{"error": "user not found"})
 		return
 	}
@@ -156,7 +156,7 @@ func History(c *gin.Context) {
 	userId := c.GetUint("userid")
 	var booking models.Booking
 
-	if err := Init.DB.Where("userid = ?", userId).Find(&booking).Error; err != nil {
+	if err := Init.DB.Where("user_id = ?", userId).Find(&booking).Error; err != nil {
 		c.JSON(400, gin.H{"Error": "error while etching booking"})
 		return
 	}

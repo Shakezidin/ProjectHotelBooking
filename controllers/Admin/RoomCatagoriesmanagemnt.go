@@ -55,7 +55,7 @@ func AddRoomCatagory(c *gin.Context) {
 }
 
 func DeleteRoomCatagories(c *gin.Context) {
-	catatagoryIDStr := c.DefaultQuery("catagoryid", "")
+	catatagoryIDStr := c.DefaultQuery("id", "")
 	if catatagoryIDStr == "" {
 		c.JSON(400, gin.H{"error": "catagoryId query parameter is missing"})
 		return

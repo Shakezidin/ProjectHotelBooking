@@ -34,10 +34,16 @@ func Dashboard(c *gin.Context) {
 		return
 	}
 
+	var adminRevenue models.Revenue
+	if err := Init.DB.Preload("Owner").Find(&adminRevenue).Error; err != nil {
+		c.JSON(400, gin.H{"error": "fetching admin revenue error"})
+		return
+	}
 	c.JSON(200, gin.H{
 		"users":  noOfUsers,
 		"owners": noOfOwners,
 		"hotels": noOfHotels,
 		"rooms":  noOfRooms,
+		"income": adminRevenue,
 	})
 }

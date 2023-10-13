@@ -20,7 +20,7 @@ func BlockedHotels(c *gin.Context) {
 }
 
 func OwnerHotels(c *gin.Context) {
-	username := c.DefaultQuery("owner_suername", "")
+	username := c.DefaultQuery("owner_username", "")
 	if username == "" {
 		c.JSON(400, gin.H{"error": "owner username query parameter is missing"})
 		return
@@ -36,7 +36,7 @@ func OwnerHotels(c *gin.Context) {
 }
 
 func BlockandUnblockhotel(c *gin.Context) {
-	hotelIDStr := c.DefaultQuery("hotelid", "")
+	hotelIDStr := c.DefaultQuery("id", "")
 	if hotelIDStr == "" {
 		c.JSON(400, gin.H{"error": "hotelid query parameter is missing"})
 		return
@@ -78,7 +78,7 @@ func HotelforApproval(c *gin.Context) {
 }
 
 func HotelsApproval(c *gin.Context) {
-	hotelIDStr := c.DefaultQuery("hotelid", "")
+	hotelIDStr := c.DefaultQuery("id", "")
 	if hotelIDStr == "" {
 		c.JSON(400, gin.H{"error": "hotelid query parameter is missing"})
 		return

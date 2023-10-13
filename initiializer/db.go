@@ -37,5 +37,10 @@ func Database_connection() {
 		&models.UsedCoupen{},
 		&models.Booking{},
 		&models.Banner{},
+		&models.Wallet{},
+		&models.Transaction{},
+		&models.RazorPay{},
+		&models.Contact{},
+		&models.Revenue{},
 	)
 }

@@ -13,7 +13,7 @@ func ViewUser(c *gin.Context) {
 	var users []models.User
 
 	// Retrieve all users
-	if err := Init.DB.Find(&users).Error; err != nil {
+	if err := Init.DB.Preload("Wallet").Find(&users).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "fetcing user Error"})
 		return
 	}
@@ -40,7 +40,7 @@ func ViewBlockedUser(c *gin.Context) {
 func ViewUnblockedUsers(c *gin.Context) {
 	var users []models.User
 
-	if err := Init.DB.Where("is_block = ?", false).Find(&users).Error;err != nil {
+	if err := Init.DB.Where("is_block = ?", false).Find(&users).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "un-Blocked user fetching error"})
 		return
 	}
@@ -51,7 +51,7 @@ func ViewUnblockedUsers(c *gin.Context) {
 }
 
 func BlockandUnblockUser(c *gin.Context) {
-	userIDStr := c.DefaultQuery("userid", "")
+	userIDStr := c.DefaultQuery("id", "")
 	if userIDStr == "" {
 		c.JSON(400, gin.H{"error": "userid query parameter is missing"})
 		return

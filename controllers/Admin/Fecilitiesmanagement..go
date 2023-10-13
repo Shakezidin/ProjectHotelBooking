@@ -55,7 +55,7 @@ func AddHotelfecilility(c *gin.Context) {
 }
 
 func DeleteHotelfecility(c *gin.Context) {
-	fecilityIDStr := c.DefaultQuery("fecilityid", "")
+	fecilityIDStr := c.DefaultQuery("id", "")
 	if fecilityIDStr == "" {
 		c.JSON(400, gin.H{"error": "hotelid query parameter is missing"})
 		return
@@ -66,7 +66,7 @@ func DeleteHotelfecility(c *gin.Context) {
 		return
 	}
 
-	if err := Init.DB.Where("fecilityid = ?", uint(fecilityID)).Delete(&models.HotelAmenities{}).Error; err != nil {
+	if err := Init.DB.Where("fecility_id = ?", uint(fecilityID)).Delete(&models.HotelAmenities{}).Error; err != nil {
 		c.JSON(400, gin.H{"Error": "delete error"})
 		return
 	}

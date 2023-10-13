@@ -9,11 +9,18 @@ import (
 func FindAvailableRoomIDs(fromDate, toDate time.Time, roomIDs []uint) ([]uint, error) {
 	var availableRoomIDs []uint
 	rows, err := Init.DB.Raw(`
-        SELECT MIN(id) as room_id, room_category_id, COUNT(*) as room_count
+        SELECT DISTINCT rooms.id as room_id
         FROM rooms
-        WHERE id IN (?) AND is_available = ? AND ? NOT IN (SELECT unnest(checkout) FROM available_rooms) AND ? NOT IN (SELECT unnest(check_in) FROM available_rooms)
-        GROUP BY room_category_id
-    `, roomIDs, true, fromDate, toDate).Rows()
+        LEFT JOIN available_rooms ON rooms.id = available_rooms.room_id
+        WHERE rooms.id IN (?) AND rooms.is_available = ? 
+        AND (
+            (available_rooms.room_id IS NULL) OR
+            (
+                NOT (? < ANY(available_rooms.check_in) AND ? < ANY(available_rooms.checkout)) AND 
+                NOT (? > ANY(available_rooms.check_in) AND ? > ANY(available_rooms.checkout))
+            )
+        )
+    `, roomIDs, true, toDate, fromDate, fromDate, toDate).Rows()
 	if err != nil {
 		return nil, err
 	}
@@ -21,9 +28,7 @@ func FindAvailableRoomIDs(fromDate, toDate time.Time, roomIDs []uint) ([]uint, e
 
 	for rows.Next() {
 		var roomID uint
-		var roomCategoryID uint
-		var roomCount int
-		if err := rows.Scan(&roomID, &roomCategoryID, &roomCount); err != nil {
+		if err := rows.Scan(&roomID); err != nil {
 			return nil, err
 		}
 
@@ -33,14 +38,15 @@ func FindAvailableRoomIDs(fromDate, toDate time.Time, roomIDs []uint) ([]uint, e
 	return availableRoomIDs, nil
 }
 
-func GetRoomCountsByCategory() (map[uint]int, error) {
-	roomCounts := make(map[uint]int)
+func GetRoomCountsByCategory() (map[string]int, error) {
+	roomCounts := make(map[string]int)
 
 	// Use a SQL query to count rooms in each category
 	rows, err := Init.DB.Raw(`
-        SELECT room_category_id, COUNT(*) as room_count
-        FROM rooms
-        GROUP BY room_category_id
+        SELECT rc.name as category_name, COUNT(*) as room_count
+        FROM rooms r
+        JOIN room_categories rc ON r.room_category_id = rc.id
+        GROUP BY rc.name
     `).Rows()
 	if err != nil {
 		return nil, err
@@ -48,13 +54,13 @@ func GetRoomCountsByCategory() (map[uint]int, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var roomCategoryID uint
+		var categoryName string
 		var roomCount int
-		if err := rows.Scan(&roomCategoryID, &roomCount); err != nil {
+		if err := rows.Scan(&categoryName, &roomCount); err != nil {
 			return nil, err
 		}
 
-		roomCounts[roomCategoryID] = roomCount
+		roomCounts[categoryName] = roomCount
 	}
 
 	return roomCounts, nil

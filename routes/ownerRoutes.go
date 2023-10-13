@@ -10,47 +10,59 @@ func OwnerRoutes(c *gin.Engine) {
 
 	owner := c.Group("/owner")
 	{
+		//<<<<<<<<<<<<<<<<<< Owner Signup & login >>>>>>>>>>>>>
 		owner.POST("/singup", HotelOwner.OwnerSignUp)
-		owner.POST("/signup-verification", HotelOwner.OwnerSingupVerification)
+		owner.POST("/signup/verification", HotelOwner.OwnerSingupVerification)
 		owner.POST("/login", HotelOwner.OwnerLogin)
+
+		//<<<<<<<<<<<<<<<<<< Owner DashBord >>>>>>>>>>>>>>>>>>
 		owner.GET("/home", middleware.AuthMiddleWare, HotelOwner.GetOwnerDashboard)
 		owner.GET("/profile", middleware.AuthMiddleWare, HotelOwner.OwnerProfile)
-		owner.PATCH("/profileedit", middleware.AuthMiddleWare, HotelOwner.ProfileEdit)
-	}
+		owner.PATCH("/profile/edit", middleware.AuthMiddleWare, HotelOwner.ProfileEdit)
 
-	hotel := c.Group("/hotel")
-	{
-		hotel.Use(middleware.AuthMiddleWare)
+		hotel := owner.Group("/hotel")
+		{
+			//<<<<<<<<< MiddleWare >>>>>>>>>>>>
+			hotel.Use(middleware.AuthMiddleWare)
 
-		hotel.GET("/hotelfecilities", HotelOwner.ViewHotelFecilities)
-		hotel.POST("/addhotel", HotelOwner.AddHotel)
-		hotel.GET("/viewhotels", HotelOwner.ViewHotels)
-		hotel.GET("/viewhotel", HotelOwner.ViewSpecificHotel)
-		hotel.PATCH("/edit", HotelOwner.Hoteledit)
-		hotel.DELETE("/delete", HotelOwner.DeleteHotel)
-		hotel.GET("/hotelavailability", HotelOwner.HotelAvailability)
-		hotel.GET("/viewbanners", HotelOwner.ViewBanners)
-		hotel.GET("/canaddbanner", HotelOwner.CanAddBanner)
-		hotel.POST("/addbanner", HotelOwner.AddBanner)
-		hotel.GET("/editbanner", HotelOwner.EditBanner)
-		hotel.POST("/updatebanner", HotelOwner.UpdateBanner)
-		hotel.GET("/banneravailability", HotelOwner.AvailableBanner)
-		hotel.DELETE("/deletebanner", HotelOwner.DeleteBanner)
-	}
-	room := c.Group("/room")
-	{
-		room.Use(middleware.AuthMiddleWare)
+			//<<<<<<<<<<<< Hotel Management >>>>>>>>>>>>>>>>
+			hotel.POST("/add", HotelOwner.AddHotel)
+			hotel.GET("/view/hotel", HotelOwner.ViewSpecificHotel)
+			hotel.GET("/view/hotels", HotelOwner.ViewHotels)
+			hotel.PATCH("/edit", HotelOwner.Hoteledit)
+			hotel.DELETE("/delete", HotelOwner.DeleteHotel)
+			hotel.GET("/availability", HotelOwner.HotelAvailability)
+			hotel.GET("/fecilities", HotelOwner.ViewHotelFecilities)
+		}
+		room := owner.Group("/room")
+		{
+			//<<<<<<<<< MiddleWare >>>>>>>>>>>>
+			room.Use(middleware.AuthMiddleWare)
 
-		room.GET("/fecilities", HotelOwner.ViewRoomfecilities)
-		room.GET("/cancellation", HotelOwner.ViewCancellation)
-		room.GET("/category", HotelOwner.ViewRoomCatagory)
-		room.GET("/add", HotelOwner.AddRoom)
-		room.POST("/adding", HotelOwner.AddingRoom)
-		room.PATCH("/edit", HotelOwner.EditRoom)
-		room.GET("/viewrooms", HotelOwner.ViewRooms)
-		room.GET("/viewspecificroom", HotelOwner.ViewspecificRoom)
-		room.DELETE("/delete", HotelOwner.DeleteRoom)
-		room.GET("/availability", HotelOwner.RoomAvailability)
+			//<<<<<<<<<<<< Room Management >>>>>>>>>>>>>>>>>
+			room.GET("/fecilities", HotelOwner.ViewRoomfecilities)
+			room.GET("/cancellation", HotelOwner.ViewCancellation)
+			room.GET("/category", HotelOwner.ViewRoomCatagory)
+
+			room.POST("/add", HotelOwner.AddingRoom)
+			room.PATCH("/edit", HotelOwner.EditRoom)
+			room.GET("/view/rooms", HotelOwner.ViewRooms)
+			room.GET("/view/room", HotelOwner.ViewspecificRoom)
+			room.GET("/availability", HotelOwner.RoomAvailability)
+			room.DELETE("/delete", HotelOwner.DeleteRoom)
+		}
+		banner := owner.Group("/banner")
+		{
+			//<<<<<<<<< MiddleWare >>>>>>>>>>>>
+			banner.Use(middleware.AuthMiddleWare)
+
+			//<<<<<<<<<Banner Management >>>>>>>>>>>>>>>
+			banner.GET("/view", HotelOwner.ViewBanners)
+			banner.POST("/add", HotelOwner.AddBanner)
+			banner.PATCH("/edit", HotelOwner.UpdateBanner)
+			banner.GET("/availability", HotelOwner.AvailableBanner)
+			banner.DELETE("/delete", HotelOwner.DeleteBanner)
+		}
 	}
 
 }

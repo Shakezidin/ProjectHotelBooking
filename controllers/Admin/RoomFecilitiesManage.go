@@ -55,7 +55,7 @@ func AddRoomfecilility(c *gin.Context) {
 }
 
 func DeleteRoomFecility(c *gin.Context) {
-	fecilityIDStr := c.DefaultQuery("fecilityid", "")
+	fecilityIDStr := c.DefaultQuery("id", "")
 	if fecilityIDStr == "" {
 		c.JSON(400, gin.H{"error": "fecilityid query parameter is missing"})
 		return
@@ -72,4 +72,3 @@ func DeleteRoomFecility(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{"status": "delete success"})
 }
-

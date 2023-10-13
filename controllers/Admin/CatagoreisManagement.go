@@ -53,7 +53,7 @@ func AddHotlecatagory(c *gin.Context) {
 }
 
 func DeleteHotelcatagory(c *gin.Context) {
-	catagoryIDStr := c.DefaultQuery("catagoryid", "")
+	catagoryIDStr := c.DefaultQuery("id", "")
 	if catagoryIDStr == "" {
 		c.JSON(400, gin.H{"error": "catagoryid query parameter is missing"})
 		return
@@ -64,7 +64,7 @@ func DeleteHotelcatagory(c *gin.Context) {
 		return
 	}
 
-	if err := Init.DB.Where("catagory_id = ?", uint(catagoryID)).Delete(&models.HotelCategory{}).Error;err != nil {
+	if err := Init.DB.Where("id = ?", uint(catagoryID)).Delete(&models.HotelCategory{}).Error; err != nil {
 		c.JSON(400, gin.H{"Error": "delete error"})
 		return
 	}

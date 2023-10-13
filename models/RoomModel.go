@@ -8,15 +8,16 @@ import (
 
 type Cancellation struct {
 	gorm.Model
-	CancellationPolicy string `json:"cancellation_policy" gorm:"not null"`
+	CancellationPolicy     string `json:"cancellation_policy" gorm:"not null"`
+	RefundAmountpercentage int    `json:"refundamountpercentage" gorm:"not null"`
 }
 
 type AvailableRoom struct {
 	gorm.Model
-	RoomID      uint        `json:"room_id"`
-	CheckIn     []time.Time `gorm:"type:timestamp[]" json:"check_in"`
-	Checkout    []time.Time `gorm:"type:timestamp[]" json:"checkout"`
-	IsAvailable bool        `json:"is_available"`
+	RoomID      uint      `json:"room_id"`
+	CheckIn     time.Time `json:"check_in" time_format:"2006-01-02"`
+	Checkout    time.Time `json:"checkout" time_format:"2006-01-02"`
+	IsAvailable bool      `json:"is_available"`
 }
 
 type RoomFecilities struct {

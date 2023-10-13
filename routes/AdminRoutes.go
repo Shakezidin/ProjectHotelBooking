@@ -3,61 +3,94 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	Admin "github.com/shaikhzidhin/controllers/Admin"
+	"github.com/shaikhzidhin/controllers/HotelOwner"
 	"github.com/shaikhzidhin/middleware"
 )
 
 func AdminRoutes(c *gin.Engine) {
 
+	//<<<<<<<<<<< Admin Login 7 dashbord >>>>>>>>>>>>>>>>
+	c.POST("/admin/login", Admin.AdminLogin)
+	c.GET("/admin/dashbord", Admin.Dashboard)
+
 	admin := c.Group("/admin")
 	{
-		admin.POST("/login", Admin.AdminLogin)
-		admin.GET("/dashbord", Admin.Dashboard)
+		admin.Use(middleware.AdminAuthMiddleWare)
 
-		//<<<<<<<<<other admin controlls>>>>>>>>>>>>>>>>>>
+		//<<<<<<<<<<<<<<< Owner Management >>>>>>>>>>>>>>>>>>>
+		admin.GET("/owners", Admin.ViewOwners)
+		admin.GET("/owner/details", HotelOwner.OwnerProfile)
+		admin.GET("/owner/block", Admin.BlockOwner)
 
-		admin.GET("/viewcancellation", middleware.AdminAuthMiddleWare, Admin.ViewRoomCancellation)
-		admin.POST("/addcancellation", middleware.AdminAuthMiddleWare, Admin.Addcancellation)
-		admin.DELETE("/deletecancellation", middleware.AdminAuthMiddleWare, Admin.Deletecancellation)
+		//<<<<<<<<<<<<<<<hotel Management>>>>>>>>>>>>>>>>>>>>
+		admin.GET("/owner/hotels", Admin.OwnerHotels)
+		admin.GET("/hotel/block", Admin.BlockandUnblockhotel)
+		admin.GET("/hotels/blocked", Admin.BlockedHotels)
+		admin.GET("/hotel/pending", Admin.HotelforApproval)
+		admin.GET("/hotel/approving", Admin.HotelsApproval)
+		admin.GET("/hotel/viewdetails", HotelOwner.ViewSpecificHotel)
 
-		admin.GET("/hotelcatagories", middleware.AdminAuthMiddleWare, Admin.ViewHotelCatagories)
-		admin.POST("/addhotelcatagories", middleware.AdminAuthMiddleWare, Admin.AddHotlecatagory)
-		admin.DELETE("/deletehotelcatagory", middleware.AdminAuthMiddleWare, Admin.DeleteHotelcatagory)
+		//<<<<<<<<<hotel fecilities controlls>>>>>>>>>>>>>>>>>>
+		admin.GET("/hotel/fecilities/view", Admin.ViewHotelFecilities)
+		admin.POST("/hotel/fecility/add", Admin.AddHotelfecilility)
+		admin.DELETE("/hotel/fecility/delete", Admin.DeleteHotelfecility)
 
-		admin.GET("/viewhotelfecilities", middleware.AdminAuthMiddleWare, Admin.ViewHotelFecilities)
-		admin.POST("/addhotelfecility", middleware.AdminAuthMiddleWare, Admin.AddHotelfecilility)
-		admin.DELETE("/deletehotelfecility", middleware.AdminAuthMiddleWare, Admin.DeleteHotelfecility)
+		//<<<<<<<<<hotel catagories controlls>>>>>>>>>>>>>>>>>>
+		admin.GET("/hotel/catagories/view", Admin.ViewHotelCatagories)
+		admin.POST("/hotel/catagories/add", Admin.AddHotlecatagory)
+		admin.DELETE("/hotel/catagory/delete", Admin.DeleteHotelcatagory)
 
-		admin.GET("/viewroomfecilities", middleware.AdminAuthMiddleWare, Admin.ViewRoomFecilities)
-		admin.POST("/addroomfecility", middleware.AdminAuthMiddleWare, Admin.AddRoomfecilility)
-		admin.DELETE("/deleteroomfecility", middleware.AdminAuthMiddleWare, Admin.DeleteRoomFecility)
+		//<<<<<<<<<<<<<<<Room Management>>>>>>>>>>>>>>>>>>>>
+		admin.GET("/owner/hotel/rooms", HotelOwner.ViewRooms)
+		admin.GET("/hotel/blocked/rooms", Admin.BlockedRooms)
+		admin.GET("/hotel/room/block", Admin.BlockandUnblockRooms)
+		admin.GET("/hotel/room/pending", Admin.RoomsforApproval)
+		admin.GET("/hotel/room/approving", Admin.RoomsApproval)
+		admin.GET("/hotel/room/details", HotelOwner.ViewspecificRoom)
 
-		admin.GET("/viewroomcatagories", middleware.AdminAuthMiddleWare, Admin.ViewRoomCatagory)
-		admin.POST("/addroomcatagory", middleware.AdminAuthMiddleWare, Admin.AddRoomCatagory)
-		admin.DELETE("/deleteroomcatagory", middleware.AdminAuthMiddleWare, Admin.DeleteRoomCatagories)
+		//<<<<<<<<<room fecilities controlls>>>>>>>>>>>>>>>>>>
+		admin.GET("/room/fecilities/view", Admin.ViewRoomFecilities)
+		admin.POST("/room/fecility/add", Admin.AddRoomfecilility)
+		admin.DELETE("/room/fecility/delete", Admin.DeleteRoomFecility)
 
-		admin.GET("/viewowners", middleware.AdminAuthMiddleWare, Admin.ViewOwner)
-		admin.GET("/blockowner", middleware.AdminAuthMiddleWare, Admin.BlockOwner)
+		//<<<<<<<<< Room cancellation controlls>>>>>>>>>>>>>>>>>>
+		admin.GET("/room/cancellation/view", Admin.ViewRoomCancellation)
+		admin.POST("/room/cancellation/add", Admin.Addcancellation)
+		admin.DELETE("/room/cancellation/delete", Admin.Deletecancellation)
 
-		admin.GET("viewbanners", middleware.AdminAuthMiddleWare, Admin.BannerView)
-		admin.GET("banneractivate", middleware.AdminAuthMiddleWare, Admin.BannerSetActive)
-		admin.GET("viewbanner", middleware.AdminAuthMiddleWare, Admin.BannerDetails)
-		admin.GET("deletebanner", middleware.AdminAuthMiddleWare, Admin.DeleteBanner)
+		//<<<<<<<<<<<room catagory controlls>>>>>>>>>>>>>>>>>>
+		admin.GET("/room/catagories/view", Admin.ViewRoomCatagory)
+		admin.POST("/room/catagory/add", Admin.AddRoomCatagory)
+		admin.DELETE("/room/catagory/delete", Admin.DeleteRoomCatagories)
 
-		admin.GET("/viewblockedhotels", middleware.AdminAuthMiddleWare, Admin.BlockedHotels)
-		admin.GET("/ownershotels", middleware.AdminAuthMiddleWare, Admin.OwnerHotels)
-		admin.GET("/hotelblockandunblock", middleware.AdminAuthMiddleWare, Admin.BlockandUnblockhotel)
-		admin.GET("/approvalpending", middleware.AdminAuthMiddleWare, Admin.HotelforApproval)
-		admin.GET("/hotelapproving", middleware.AdminAuthMiddleWare, Admin.HotelsApproval)
+		//<<<<<<<<<<<<<<<Message Management>>>>>>>>>>>>>>>>>>>>>
+		admin.GET("/message", Admin.GetMessages)
+		admin.GET("/message/delete", Admin.DeleteMessage)
 
-		admin.GET("/viewblockedrooms", middleware.AdminAuthMiddleWare, Admin.BlockedRooms)
-		admin.GET("/ownersrooms", middleware.AdminAuthMiddleWare, Admin.OwnerRooms)
-		admin.GET("/roomblockandunblock", middleware.AdminAuthMiddleWare, Admin.BlockandUnblockRooms)
-		admin.GET("/roomapprovalpending", middleware.AdminAuthMiddleWare, Admin.RoomsforApproval)
-		admin.GET("/roomapproving", middleware.AdminAuthMiddleWare, Admin.RoomsApproval)
+		//<<<<<<<<<<<<<<<<Report Management >>>>>>>>>>>>>>>>>
+		admin.GET("/reports", Admin.ViewReports)
+		admin.GET("/report/details", Admin.ReportDetails)
+		admin.POST("/report/status", Admin.ReportStatus)
+		admin.DELETE("/report/delete", Admin.DeleteReport)
 
-		admin.GET("/viewusers", middleware.AdminAuthMiddleWare, Admin.ViewUser)
-		admin.GET("/viewblockedusers", middleware.AdminAuthMiddleWare, Admin.ViewBlockedUser)
-		admin.GET("/viewunblockedusers", middleware.AdminAuthMiddleWare, Admin.ViewUnblockedUsers)
-		admin.GET("/blockandunblockuser", middleware.AdminAuthMiddleWare, Admin.BlockandUnblockUser)
+		//<<<<<<<<<<<<< Banner Management >>>>>>>>>>>>>>>>>>>>
+		admin.GET("/banners", Admin.BannerView)
+		admin.GET("/banner/details", Admin.BannerDetails)
+		admin.GET("/banner/activate", Admin.BannerSetActive)
+		admin.GET("/banner/delete", Admin.DeleteBanner)
+
+		//<<<<<<<<<<<<<<<<<<User Management>>>>>>>>>>>>>>>>>>>>
+		admin.GET("/users", Admin.ViewUser)
+		admin.GET("/users/blocked", Admin.ViewBlockedUser)
+		admin.GET("/users/unblocked", Admin.ViewUnblockedUsers)
+		admin.GET("/user/block", Admin.BlockandUnblockUser)
+
+		//<<<<<<<<<<<<<<<< Coupon Management >>>>>>>>>>>>>>>>>>>
+		admin.GET("/coupons/view", Admin.ViewCoupons)
+		admin.POST("/coupon/add", Admin.CreateCoupon)
+		admin.GET("/coupon/block", Admin.BlockCoupon)
+		admin.GET("/coupon/getcoupon", Admin.GetCoupon)
+		admin.PATCH("/coupon/update", Admin.UpdateCoupon)
+		admin.DELETE("/coupon/delete", Admin.DeleteCoupon)
 	}
 }

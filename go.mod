@@ -9,6 +9,7 @@ require (
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-playground/validator/v10 v10.15.3
 	github.com/joho/godotenv v1.5.1
+	github.com/razorpay/razorpay-go v1.2.0
 	github.com/redis/go-redis/v9 v9.1.0
 	golang.org/x/crypto v0.9.0
 	gorm.io/driver/postgres v1.5.2

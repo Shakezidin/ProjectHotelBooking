@@ -23,7 +23,7 @@ func BannerView(c *gin.Context) {
 }
 
 func BannerSetActive(c *gin.Context) {
-	id := c.Query("bannerid")
+	id := c.Query("id")
 
 	if id == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid parameters"})
@@ -46,7 +46,7 @@ func BannerSetActive(c *gin.Context) {
 }
 
 func BannerDetails(c *gin.Context) {
-	bannerID := c.Query("bannerid")
+	bannerID := c.Query("id")
 
 	if bannerID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid parameter"})
@@ -65,7 +65,7 @@ func BannerDetails(c *gin.Context) {
 }
 
 func DeleteBanner(c *gin.Context) {
-	bannerID := c.Query("bannerid")
+	bannerID := c.Query("id")
 
 	if bannerID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid parameter"})

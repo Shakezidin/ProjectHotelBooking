@@ -52,41 +52,13 @@ func ViewRoomCatagory(c *gin.Context) {
 	})
 }
 
-// >>>>>>>>>>>>>> room details needed to fill <<<<<<<<<<<<<<<<<<<<<<<<<<
-
-func AddRoom(c *gin.Context) {
-	var room struct {
-		Description string   `json:"description"`
-		Price       float64  `json:"price"`
-		Adults      int      `json:"adults"`
-		Children    int      `json:"children"`
-		Bed         string   `json:"bed"`
-		Images      string   `json:"images"`
-		IsAvailable bool     `json:"is_available"`
-		Discount    float64  `json:"discount"`
-		Fecilities  []string `json:"facilities" gorm:"type:jsonb"`
-	}
-	c.JSON(200, gin.H{
-		"room": room,
-	})
-}
-
 // >>>>>>>>>>>>>> Add Room Details <<<<<<<<<<<<<<<<<<<<<<<<<<
 func AddingRoom(c *gin.Context) {
-	numberOfRoomsStr := c.DefaultQuery("numberofrooms", "")
-	floorNumberStr := c.DefaultQuery("floornumber", "1")
-
-	numberOfRooms, err := strconv.Atoi(numberOfRoomsStr)
-	if err != nil {
-		c.JSON(400, gin.H{"error": "Invalid number Of Rooms"})
-		return
-	}
-
-	floorNumber, err := strconv.Atoi(floorNumberStr)
-	if err != nil {
-		c.JSON(400, gin.H{"error": "Invalid floornumber"})
-		return
-	}
+	numberOfRooms, _ := strconv.Atoi(c.Query("numberofrooms"))
+	floorNumber, _ := strconv.Atoi(c.Query("floornumber"))
+	cancellationId, _ := strconv.Atoi(c.Query("cancellationid"))
+	hotelId, _ := strconv.Atoi(c.Query("id"))
+	roomCatagoryId, _ := strconv.Atoi(c.Query("room_category_id"))
 
 	var roombind models.Rooms
 	if err := c.ShouldBindJSON(&roombind); err != nil {
@@ -104,17 +76,17 @@ func AddingRoom(c *gin.Context) {
 
 		room.Adults = roombind.Adults
 		room.Bed = roombind.Bed
-		room.CancellationId = roombind.CancellationId
+		room.CancellationId = uint(cancellationId)
 		room.Children = roombind.Children
 		room.Description = roombind.Description
 		room.Discount = roombind.Discount
 		room.Fecility = roombind.Fecility
-		room.HotelsId = roombind.HotelsId
+		room.HotelsId = uint(hotelId)
 		room.Images = roombind.Images
 		room.IsAvailable = roombind.IsAvailable
 		room.Price = roombind.Price
-		room.RoomCategoryId = roombind.RoomCategoryId
-		room.RoomNo = floorNumber*100 + roomnum 
+		room.RoomCategoryId = uint(roomCatagoryId)
+		room.RoomNo = floorNumber*100 + roomnum
 		room.DiscountPrice = room.Price - (room.Price * room.Discount / 100)
 
 		header := c.Request.Header.Get("Authorization")
@@ -138,8 +110,7 @@ func AddingRoom(c *gin.Context) {
 
 // >>>>>>>>>>>>>> Edit Room <<<<<<<<<<<<<<<<<<<<<<<<<<
 func EditRoom(c *gin.Context) {
-	// Get hotel_id and room_category_id from query parameters
-	hotelIDStr := c.DefaultQuery("hotel_id", "")
+	hotelIDStr := c.DefaultQuery("id", "")
 	roomCategoryIDStr := c.DefaultQuery("room_category_id", "")
 
 	// Parse room_category_id to uint64
@@ -213,7 +184,7 @@ func EditRoom(c *gin.Context) {
 // >>>>>>>>>>>>>> view Rooms <<<<<<<<<<<<<<<<<<<<<<<<<<
 
 func ViewRooms(c *gin.Context) {
-	hotelIdStr := c.DefaultQuery("hotelid", "")
+	hotelIdStr := c.DefaultQuery("id", "")
 	if hotelIdStr == "" {
 		c.JSON(400, gin.H{"error": "hotelid query parameter is missing"})
 		return
@@ -223,14 +194,8 @@ func ViewRooms(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "convert error"})
 		return
 	}
-	header := c.Request.Header.Get("Authorization")
-	username, err := Auth.Trim(header)
-	if err != nil {
-		c.JSON(404, gin.H{"error": "username didnt get"})
-		return
-	}
 	var rooms []models.Rooms
-	if err := Init.DB.Preload("RoomCategory").Preload("Cancellation").Preload("Hotels").Where("hotels_id = ? AND owner_username = ?", uint(hotelId), username).Find(&rooms).Error; err != nil {
+	if err := Init.DB.Preload("RoomCategory").Preload("Cancellation").Preload("Hotels").Where("hotels_id = ?", uint(hotelId)).Find(&rooms).Error; err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
@@ -245,7 +210,7 @@ func ViewRooms(c *gin.Context) {
 // >>>>>>>>>>>>>> view Specific Room <<<<<<<<<<<<<<<<<<<<<<<<<<
 
 func ViewspecificRoom(c *gin.Context) {
-	roomIdStr := c.DefaultQuery("roomid", "")
+	roomIdStr := c.DefaultQuery("id", "")
 	if roomIdStr == "" {
 		c.JSON(400, gin.H{"error": "roomid query parameter is missing"})
 		return
@@ -255,19 +220,9 @@ func ViewspecificRoom(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "convert error"})
 		return
 	}
-	hotelIdStr := c.DefaultQuery("hotelid", "")
-	if hotelIdStr == "" {
-		c.JSON(400, gin.H{"error": "hotelid query parameter is missing"})
-		return
-	}
-	hotelId, err := strconv.Atoi(hotelIdStr)
-	if err != nil {
-		c.JSON(400, gin.H{"error": "convert error"})
-		return
-	}
 
 	var room models.Rooms
-	if err := Init.DB.Preload("Cancellation").Preload("RoomCategory").Where("hotels_id = ? AND id = ?", uint(hotelId), uint(roomId)).First(&room).Error; err != nil {
+	if err := Init.DB.Preload("Cancellation").Preload("RoomCategory").Where("id = ?", uint(roomId)).First(&room).Error; err != nil {
 		c.JSON(500, gin.H{
 			"msg": err.Error(),
 		})
@@ -288,7 +243,7 @@ func DeleteRoom(c *gin.Context) {
 		c.JSON(404, gin.H{"error": "username didnt get"})
 		return
 	}
-	roomIdStr := c.DefaultQuery("roomid", "")
+	roomIdStr := c.DefaultQuery("id", "")
 	if roomIdStr == "" {
 		c.JSON(400, gin.H{"error": "roomid query parameter is missing"})
 		return
@@ -308,7 +263,7 @@ func DeleteRoom(c *gin.Context) {
 // >>>>>>>>>>>>>> Switching Room Availability <<<<<<<<<<<<<<<<<<<<<<<<<<
 
 func RoomAvailability(c *gin.Context) {
-	roomIDStr := c.DefaultQuery("roomid", "")
+	roomIDStr := c.DefaultQuery("id", "")
 	if roomIDStr == "" {
 		c.JSON(400, gin.H{"error": "hotelid query parameter is missing"})
 		return

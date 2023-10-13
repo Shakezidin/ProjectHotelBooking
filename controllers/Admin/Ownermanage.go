@@ -8,19 +8,19 @@ import (
 	"github.com/shaikhzidhin/models"
 )
 
-func ViewOwner(c *gin.Context) {
+func ViewOwners(c *gin.Context) {
 	var owners []models.Owner
 
-	if err := Init.DB.Find(&owners).Error;err != nil {
+	if err := Init.DB.Find(&owners).Error; err != nil {
 		c.JSON(400, gin.H{"error": "fetching owners error"})
 		return
-	}	
+	}
 
 	c.JSON(200, gin.H{"owners": owners})
 }
 
 func BlockOwner(c *gin.Context) {
-	ownerIDStr := c.DefaultQuery("ownerid", "")
+	ownerIDStr := c.DefaultQuery("id", "")
 	if ownerIDStr == "" {
 		c.JSON(400, gin.H{"error": "hotelid query parameter is missing"})
 		return

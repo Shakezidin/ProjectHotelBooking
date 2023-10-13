@@ -18,6 +18,6 @@ type Coupon struct {
 
 type UsedCoupen struct {
 	gorm.Model
-	username string
+	Username string
 	CouponId uint
 }

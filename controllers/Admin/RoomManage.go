@@ -19,24 +19,24 @@ func BlockedRooms(c *gin.Context) {
 	c.JSON(200, gin.H{"blocked hotels": room})
 }
 
-func OwnerRooms(c *gin.Context) {
-	username := c.DefaultQuery("owner_username", "")
-	if username == "" {
-		c.JSON(400, gin.H{"error": "owner username query parameter is missing"})
-		return
-	}
-	var rooms []models.Rooms
+// func OwnerRooms(c *gin.Context) {
+// 	username := c.DefaultQuery("owner_username", "")
+// 	if username == "" {
+// 		c.JSON(400, gin.H{"error": "owner username query parameter is missing"})
+// 		return
+// 	}
+// 	var rooms []models.Rooms
 
-	if err := Init.DB.Preload("Cancellation").Preload("Hotels").Preload("RoomCategory").Where("owner_username = ?", username).Find(&rooms).Error; err != nil {
-		c.JSON(400, gin.H{"error": err})
-		return
-	}
+// 	if err := Init.DB.Preload("Cancellation").Preload("Hotels").Preload("RoomCategory").Where("owner_username = ?", username).Find(&rooms).Error; err != nil {
+// 		c.JSON(400, gin.H{"error": err})
+// 		return
+// 	}
 
-	c.JSON(200, gin.H{"hotels": rooms})
-}
+// 	c.JSON(200, gin.H{"hotels": rooms})
+// }
 
 func BlockandUnblockRooms(c *gin.Context) {
-	RoomIDStr := c.DefaultQuery("roomId", "")
+	RoomIDStr := c.DefaultQuery("id", "")
 	if RoomIDStr == "" {
 		c.JSON(400, gin.H{"error": "roomid query parameter is missing"})
 		return
@@ -78,7 +78,7 @@ func RoomsforApproval(c *gin.Context) {
 }
 
 func RoomsApproval(c *gin.Context) {
-	roomIdStr := c.DefaultQuery("roomid", "")
+	roomIdStr := c.DefaultQuery("id", "")
 	if roomIdStr == "" {
 		c.JSON(400, gin.H{"error": "roomId query parameter is missing"})
 		return

@@ -1,15 +1,17 @@
 package user
 
 import (
+	"context"
 	"net/http"
+	"time"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 
-	// "github.com/gorilla/sessions"
 	Auth "github.com/shaikhzidhin/Auth"
 	auth "github.com/shaikhzidhin/Auth"
 	controllers "github.com/shaikhzidhin/controllers/Otp"
+	"github.com/shaikhzidhin/initiializer"
 
 	// "github.com/shaikhzidhin/controllers"
 
@@ -57,6 +59,20 @@ func UserLogin(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		c.Abort()
+		return
+	}
+	token := tokenString
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("UserAuth", token, 3600*24*30, "", "", false, true)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.Abort()
+		return
+	}
+
+	err = initiializer.ReddisClient.Set(context.Background(), "userId", user.User_Id, 1*time.Hour).Err()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error inserting in Redis client"})
 		return
 	}
 

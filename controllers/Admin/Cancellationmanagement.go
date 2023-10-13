@@ -55,7 +55,7 @@ func Addcancellation(c *gin.Context) {
 }
 
 func Deletecancellation(c *gin.Context) {
-	cancellationIDStr := c.DefaultQuery("cancellationid", "")
+	cancellationIDStr := c.DefaultQuery("id", "")
 	if cancellationIDStr == "" {
 		c.JSON(400, gin.H{"error": "catagoryid query parameter is missing"})
 		return
@@ -66,7 +66,7 @@ func Deletecancellation(c *gin.Context) {
 		return
 	}
 
-	if err := Init.DB.Where("cancellation_id = ?", uint(cancellationID)).Delete(&models.Cancellation{}).Error; err != nil {
+	if err := Init.DB.Where("id = ?", uint(cancellationID)).Delete(&models.Cancellation{}).Error; err != nil {
 		c.JSON(400, gin.H{"Error": "delete error"})
 		return
 	}

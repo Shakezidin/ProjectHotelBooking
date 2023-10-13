@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	Auth "github.com/shaikhzidhin/Auth"
 	Init "github.com/shaikhzidhin/initiializer"
@@ -21,7 +20,7 @@ func ViewBanners(c *gin.Context) {
 
 	var owner models.Owner
 
-	if err := Init.DB.Where("username = ?", username).First(&owner); err != nil {
+	if err := Init.DB.Where("user_name = ?", username).First(&owner).Error; err != nil {
 		c.JSON(400, gin.H{"Error": "Error while fetcing owner"})
 		return
 	}
@@ -31,7 +30,7 @@ func ViewBanners(c *gin.Context) {
 	db := Init.DB
 
 	// Retrieve banners owned by the owner
-	if err := db.Where("owner_id = ?", owner.ID).Preload("Hotel").Find(&banners).Error; err != nil {
+	if err := db.Where("owner_id = ?", owner.ID).Preload("Hotels").Find(&banners).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error while fetching bannners"})
 		return
 	}
@@ -40,43 +39,6 @@ func ViewBanners(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"banner": banners,
 	})
-}
-
-func CanAddBanner(c *gin.Context) {
-	header := c.Request.Header.Get("Authorization")
-	username, err := Auth.Trim(header)
-	if err != nil {
-		c.JSON(404, gin.H{"error": "username didnt get"})
-		return
-	}
-
-	var hotelCount int64
-	var owner models.Owner
-
-	if err := Init.DB.Where("username = ?", username).First(&owner); err != nil {
-		c.JSON(400, gin.H{"Error": "Error while fetcing owner"})
-		return
-	}
-
-	if err := Init.DB.Model(&models.Hotels{}).Where("owner_username = ?", username).Count(&hotelCount); err != nil {
-		c.JSON(400, gin.H{"Error": "Error while fetching hotels"})
-		return
-	}
-
-	var bannerCount int64
-	if err := Init.DB.Model(&models.Banner{}).Where("owner_id = ?", owner.ID).Count(&bannerCount); err != nil {
-		c.JSON(400, gin.H{"Error": "Error while fetching banners"})
-		return
-	}
-
-	maxBannersPerHotel := int64(3)
-
-	if bannerCount >= maxBannersPerHotel*5 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Please note that you have exceeded the limit. Delete any existing banners before adding new ones"})
-		return
-	}
-
-	c.JSON(200, gin.H{"Status": "banner can add"})
 }
 
 func AddBanner(c *gin.Context) {
@@ -89,7 +51,7 @@ func AddBanner(c *gin.Context) {
 
 	var owner models.Owner
 
-	if err := Init.DB.Where("username = ?", username).First(&owner); err != nil {
+	if err := Init.DB.Where("user_name = ?", username).First(&owner).Error; err != nil {
 		c.JSON(400, gin.H{"Error": "Error while fetcing owner"})
 		return
 	}
@@ -100,6 +62,16 @@ func AddBanner(c *gin.Context) {
 		return
 	}
 
+	var existbannnercount int64
+	if err := Init.DB.Where("hotels_id = ?", banner.HotelsId).Find(&models.Banner{}).Count(&existbannnercount).Error; err != nil {
+		c.JSON(400, gin.H{"Error": "Error whiler fetching count"})
+		return
+	}
+
+	if existbannnercount >= 3 {
+		c.JSON(400, gin.H{"Error": "Exceeded the limit"})
+		return
+	}
 	banner.OwnerID = owner.ID
 	banner.LinkTo = "/hotel/home?id=" + strconv.Itoa(int(banner.HotelsId))
 
@@ -111,29 +83,12 @@ func AddBanner(c *gin.Context) {
 	c.JSON(200, gin.H{"Status": "Banner Added"})
 }
 
-func EditBanner(c *gin.Context) {
-	bannerID, err := strconv.Atoi(c.Query("bannerid"))
+func UpdateBanner(c *gin.Context) {
+	bannerID, err := strconv.Atoi(c.Query("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid banner ID"})
 		return
 	}
-
-	var banner models.Banner
-	if err := Init.DB.First(&banner, bannerID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Banner not found"})
-		return
-	}
-
-	session := sessions.Default(c)
-	session.Set("bannerID", bannerID)
-	session.Save()
-
-	c.JSON(200, gin.H{"Banner": banner})
-}
-
-func UpdateBanner(c *gin.Context) {
-	session := sessions.Default(c)
-	val := session.Get("bannerID")
 
 	var requestBody struct {
 		Title    string `json:"title"`
@@ -147,9 +102,21 @@ func UpdateBanner(c *gin.Context) {
 
 	var banner models.Banner
 
-	if err := Init.DB.Where("banner_id = ?", val).First(&banner); err != nil {
+	if err := Init.DB.Where("id = ?", uint(bannerID)).First(&banner).Error; err != nil {
 		c.JSON(400, gin.H{"Error": "Error while fetching banner"})
 		return
+	}
+
+	if requestBody.ImageURL == "" {
+		requestBody.ImageURL = banner.ImageURL
+	}
+
+	if requestBody.Subtitle == "" {
+		requestBody.Subtitle = banner.Subtitle
+	}
+
+	if requestBody.Title == "" {
+		requestBody.Title = banner.Title
 	}
 
 	banner.Title = requestBody.Title
@@ -166,7 +133,7 @@ func UpdateBanner(c *gin.Context) {
 }
 
 func AvailableBanner(c *gin.Context) {
-	bannerID, err := strconv.Atoi(c.Query("bannerid"))
+	bannerID, err := strconv.Atoi(c.Query("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid banner ID"})
 		return
@@ -189,11 +156,11 @@ func AvailableBanner(c *gin.Context) {
 	}
 
 	// Respond with the updated availability status
-	c.JSON(http.StatusOK, gin.H{"available": banner.Available})
+	c.JSON(http.StatusOK, gin.H{"available": "available updated"})
 }
 
 func DeleteBanner(c *gin.Context) {
-	bannerID, err := strconv.Atoi(c.Query("bannerid"))
+	bannerID, err := strconv.Atoi(c.Query("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid banner ID"})
 		return
@@ -206,5 +173,7 @@ func DeleteBanner(c *gin.Context) {
 	}
 
 	// Respond with a success message
-	c.Status(http.StatusOK)
+	c.JSON(http.StatusOK, gin.H{
+		"Status": "Success",
+	})
 }

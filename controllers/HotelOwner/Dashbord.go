@@ -2,6 +2,7 @@ package HotelOwner
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	Auth "github.com/shaikhzidhin/Auth"
@@ -12,6 +13,7 @@ import (
 func GetOwnerDashboard(c *gin.Context) {
 	var hotelsCount, roomsCount int64
 	var bookings []models.Booking
+	var owner models.Owner
 
 	db := Init.DB
 
@@ -22,9 +24,7 @@ func GetOwnerDashboard(c *gin.Context) {
 		return
 	}
 
-	var owner models.Owner
-
-	if err := Init.DB.Where("username = ?", username).First(&owner); err != nil {
+	if err := Init.DB.Where("user_name = ?", username).First(&owner).Error; err != nil {
 		c.JSON(400, gin.H{"Error": "Error while fetcing owner"})
 		return
 	}
@@ -41,13 +41,13 @@ func GetOwnerDashboard(c *gin.Context) {
 	}
 
 	// Retrieve bookings for the owner
-	if err := db.Preload("Hotel").Preload("User").Preload("Room").Where("owner_id = ?", owner.ID).Find(&bookings).Error; err != nil {
+	if err := db.Preload("Hotels").Preload("User").Preload("Rooms").Where("owner_id = ?", owner.ID).Find(&bookings).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Error": "Error while fetching bookings"})
 		return
 	}
 
 	// Render the owner dashboard template
-	c.HTML(http.StatusOK, "ownerDashboard.tmpl", gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"revenue": owner.Revenue,
 		"hotels":  hotelsCount,
 		"rooms":   roomsCount,
@@ -58,16 +58,10 @@ func GetOwnerDashboard(c *gin.Context) {
 // >>>>>>>>>>>>>> owner Profile <<<<<<<<<<<<<<<<<<<<<<<<<<
 
 func OwnerProfile(c *gin.Context) {
+	ownerId, _ := strconv.Atoi(c.Query("id"))
 	var owner models.Owner
 
-	header := c.Request.Header.Get("Authorization")
-	username, err := Auth.Trim(header)
-	if err != nil {
-		c.JSON(404, gin.H{"error": "username didnt get"})
-		return
-	}
-
-	if err := Init.DB.Where("user_name = ?", username).First(&owner).Error; err != nil {
+	if err := Init.DB.Where("id = ?", ownerId).First(&owner).Error; err != nil {
 		c.JSON(400, gin.H{"error": "owner not found"})
 		return
 	}
@@ -115,6 +109,18 @@ func ProfileEdit(c *gin.Context) {
 			"Message": "phone nuber already exist already Exist",
 		})
 		return
+	}
+
+	if updatedowner.Email == "" {
+		updatedowner.Email = owner.Email
+	}
+
+	if updatedowner.Phone == "" {
+		updatedowner.Phone = owner.Phone
+	}
+
+	if updatedowner.Name == "" {
+		updatedowner.Name = owner.Name
 	}
 
 	owner.Name = updatedowner.Name
