@@ -2,16 +2,14 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	Init "github.com/shaikhzidhin/initiializer"
+	Init "github.com/shaikhzidhin/initializer"
 	"github.com/shaikhzidhin/routes"
 )
 
-var R = gin.Default()
-
 func main() {
 
-	Init.Database_connection()
-	Init.Getenv()
+	Init.DatabaseConnection()
+	Init.LoadEnvironmentVariables()
 
 	r := gin.Default()
 	r.LoadHTMLGlob("templates/*")

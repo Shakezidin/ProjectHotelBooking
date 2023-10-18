@@ -6,69 +6,64 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	Init "github.com/shaikhzidhin/initiializer"
+	Init "github.com/shaikhzidhin/initializer"
 	"github.com/shaikhzidhin/models"
 )
 
+// ViewRoomCancellation returns a list of room cancellation options.
 func ViewRoomCancellation(c *gin.Context) {
 	var cancellation []models.Cancellation
 	if err := Init.DB.Find(&cancellation).Error; err != nil {
-		c.JSON(400, gin.H{"msg": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	// var hotel models.Hotel
-	c.JSON(200, gin.H{
-		"cancellation": cancellation,
-		// "hotel": hotel,
-	})
+	c.JSON(http.StatusOK, gin.H{"cancellation": cancellation})
 }
 
-func Addcancellation(c *gin.Context) {
+// AddCancellation adds a new cancellation option.
+func AddCancellation(c *gin.Context) {
 	var cancellation models.Cancellation
 
 	if err := c.ShouldBindJSON(&cancellation); err != nil {
-		c.JSON(400, gin.H{"error": "Binding error"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data"})
 		return
 	}
 
 	validationErr := validate.Struct(cancellation)
 	if validationErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "validation error1"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Validation error"})
 		return
 	}
 
-	record := Init.DB.Create(&cancellation)
-	if record.Error != nil {
+	if record := Init.DB.Create(&cancellation); record.Error != nil {
 		// Log the error for debugging purposes.
 		fmt.Println("Database error:", record.Error)
-
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": "Error occurred while creating cancellation",
-			"error":   record.Error.Error(), // Include the specific database error message.
+			"error":   record.Error.Error(),
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "cancellation create Success",
-	})
+	c.JSON(http.StatusOK, gin.H{"message": "Cancellation created successfully"})
 }
 
-func Deletecancellation(c *gin.Context) {
-	cancellationIDStr := c.DefaultQuery("id", "")
+// DeleteCancellation deletes a cancellation option by ID.
+func DeleteCancellation(c *gin.Context) {
+	cancellationIDStr := c.Query("id")
 	if cancellationIDStr == "" {
-		c.JSON(400, gin.H{"error": "catagoryid query parameter is missing"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request: Missing 'id' parameter"})
 		return
 	}
 	cancellationID, err := strconv.Atoi(cancellationIDStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "convert error"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid 'id' parameter"})
 		return
 	}
 
 	if err := Init.DB.Where("id = ?", uint(cancellationID)).Delete(&models.Cancellation{}).Error; err != nil {
-		c.JSON(400, gin.H{"Error": "delete error"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to delete cancellation"})
 		return
 	}
-	c.JSON(200, gin.H{"status": "delete success"})
+	c.JSON(http.StatusOK, gin.H{"status": "Deletion successful"})
 }

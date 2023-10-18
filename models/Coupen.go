@@ -6,9 +6,10 @@ import (
 	"gorm.io/gorm"
 )
 
+//Coupon Model
 type Coupon struct {
 	gorm.Model
-	CoupenCode string    `gorm:"not null"`
+	CouponCode string    `gorm:"not null"`
 	Discount   int       `gorm:"not null"`
 	MinValue   int       `gorm:"not null"`
 	MaxValue   int       `gorm:"not null"`
@@ -16,8 +17,9 @@ type Coupon struct {
 	IsBlock    bool      `gomr:"default:false"`
 }
 
-type UsedCoupen struct {
+//UsedCoupon Model
+type UsedCoupon struct {
 	gorm.Model
-	Username string
-	CouponId uint
+	UserID uint
+	CouponID uint
 }

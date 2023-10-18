@@ -2,21 +2,19 @@ package user
 
 import (
 	"net/http"
-
 	"github.com/gin-gonic/gin"
 	Auth "github.com/shaikhzidhin/Auth"
-	Init "github.com/shaikhzidhin/initiializer"
+	Init "github.com/shaikhzidhin/initializer"
 	"github.com/shaikhzidhin/models"
 )
 
-// >>>>>>>>>>>>>> User Profile <<<<<<<<<<<<<<<<<<<<<<<<<<
-
+// Profile handles user profile retrieval.
 func Profile(c *gin.Context) {
 	var user models.User
 	header := c.Request.Header.Get("Authorization")
 	username, err := Auth.Trim(header)
 	if err != nil {
-		c.JSON(404, gin.H{"error": "username didnt get"})
+		c.JSON(404, gin.H{"error": "username didn't get"})
 		return
 	}
 
@@ -28,13 +26,12 @@ func Profile(c *gin.Context) {
 	c.JSON(200, gin.H{"success": user})
 }
 
-// >>>>>>>>>>>>>> User Profile Edit <<<<<<<<<<<<<<<<<<<<<<<<<<
-
+// ProfileEdit handles editing user profile.
 func ProfileEdit(c *gin.Context) {
 	header := c.Request.Header.Get("Authorization")
 	username, err := Auth.Trim(header)
 	if err != nil {
-		c.JSON(404, gin.H{"error": "username didnt get"})
+		c.JSON(404, gin.H{"error": "username didn't get"})
 		return
 	}
 	var user models.User
@@ -57,7 +54,7 @@ func ProfileEdit(c *gin.Context) {
 	result := Init.DB.Where("email = ?", updateuser.Email).First(&user)
 	if result.RowsAffected > 0 {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"Message": "email already Exist",
+			"Message": "email already exists",
 		})
 		return
 	}
@@ -65,7 +62,7 @@ func ProfileEdit(c *gin.Context) {
 	phone := Init.DB.Where("phone = ?", updateuser.Phone).First(&user)
 	if phone.RowsAffected > 0 {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"Message": "phone nuber already exist already Exist",
+			"Message": "phone number already exists",
 		})
 		return
 	}
@@ -94,12 +91,11 @@ func ProfileEdit(c *gin.Context) {
 	c.JSON(200, gin.H{"status": "success"})
 }
 
-// >>>>>>>>>>>>>> User Password Change <<<<<<<<<<<<<<<<<<<<<<<<<<
-
+// PasswordChange handles changing user password.
 func PasswordChange(c *gin.Context) {
 	var pswrd struct {
-		Old_password string `json:"oldpassword"`
-		New_password string `json:"newpassword"`
+		OldPassword string `json:"oldpassword"`
+		NewPassword string `json:"newpassword"`
 	}
 
 	if err := c.BindJSON(&pswrd); err != nil {
@@ -110,7 +106,7 @@ func PasswordChange(c *gin.Context) {
 	header := c.Request.Header.Get("Authorization")
 	username, err := Auth.Trim(header)
 	if err != nil {
-		c.JSON(404, gin.H{"error": "username didnt get"})
+		c.JSON(404, gin.H{"error": "username didn't get"})
 		return
 	}
 	var user models.User
@@ -122,15 +118,14 @@ func PasswordChange(c *gin.Context) {
 		return
 	}
 
-	if err := user.CheckPassword(pswrd.Old_password); err != nil {
+	if err := user.CheckPassword(pswrd.OldPassword); err != nil {
 		c.JSON(400, gin.H{
 			"msg": "password incorrect",
 		})
 		return
 	}
 
-
-	if err := user.HashPassword(pswrd.New_password); err != nil {
+	if err := user.HashPassword(pswrd.NewPassword); err != nil {
 		c.JSON(400, gin.H{
 			"msg": "hashing error",
 		})
@@ -147,17 +142,28 @@ func PasswordChange(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"status": "success"})
-
 }
 
-//you can add history booking here
-
+// History handles user booking history retrieval.
 func History(c *gin.Context) {
-	userId := c.GetUint("userid")
-	var booking models.Booking
+	header := c.Request.Header.Get("Authorization")
+	username, err := Auth.Trim(header)
+	if err != nil {
+		c.JSON(404, gin.H{"error": "username didn't get"})
+		return
+	}
+	var user models.User
+	if err := Init.DB.Where("user_name = ?", username).First(&user).Error; err != nil {
+		c.JSON(500, gin.H{
+			"msg": err.Error(),
+		})
+		c.Abort()
+		return
+	}
+	var booking []models.Booking
 
-	if err := Init.DB.Where("user_id = ?", userId).Find(&booking).Error; err != nil {
-		c.JSON(400, gin.H{"Error": "error while etching booking"})
+	if err := Init.DB.Where("user_id = ?", user.ID).Find(&booking).Error; err != nil {
+		c.JSON(400, gin.H{"Error": "error while fetching booking"})
 		return
 	}
 

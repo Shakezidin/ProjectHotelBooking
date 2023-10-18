@@ -4,30 +4,27 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	Init "github.com/shaikhzidhin/initiializer"
+	Init "github.com/shaikhzidhin/initializer"
 	"github.com/shaikhzidhin/models"
 )
 
-// >>>>>>>>>>>>>> User HomePage <<<<<<<<<<<<<<<<<<<<<<<<<<
-func UserHome(c *gin.Context) {
-	var banner []models.Banner
+// Home is a handler for the user's homepage.
+func Home(c *gin.Context) {
+	var banners []models.Banner
 
-	if err := Init.DB.Preload("Hotels").Where("available = ? AND active = ?", true, true).Find(&banner).Error; err != nil {
-		c.JSON(400, gin.H{"error": "error while fetching banner"})
+	if err := Init.DB.Preload("Hotels").Where("available = ? AND active = ?", true, true).Find(&banners).Error; err != nil {
+		c.JSON(400, gin.H{"error": "error while fetching banners"})
 		return
 	}
-	city := c.DefaultQuery("location", "")
+	city := c.Query("loc")
 	if city == "" {
 		c.JSON(400, gin.H{"error": "location query parameter is missing"})
 		return
 	}
 
-	page := c.DefaultQuery("page", "1")
+	page := c.Query("page")
 	limit := 10
-	pageInt := 1
-	if p, err := strconv.Atoi(page); err == nil {
-		pageInt = p
-	}
+	pageInt, _ := strconv.Atoi(page)
 
 	skip := (pageInt - 1) * limit
 
@@ -54,18 +51,17 @@ func UserHome(c *gin.Context) {
 		rooms = append(rooms, hotelRooms...)
 	}
 
-	c.JSON(200, gin.H{"Hotels": hotels, "Rooms": rooms, "banners": banner})
+	c.JSON(200, gin.H{"Hotels": hotels, "Rooms": rooms, "Banners": banners})
 }
 
-// >>>>>>>>>>>>>> Banner Showing <<<<<<<<<<<<<<<<<<<<<<<<<<
-
+// BannerShowing is a handler for displaying all banners.
 func BannerShowing(c *gin.Context) {
-	var banner []models.Banner
+	var banners []models.Banner
 
-	if err := Init.DB.Preload("Hotels").Where("available = ? AND active = ?", true, true).Find(&banner).Error; err != nil {
-		c.JSON(400, gin.H{"error": "banner retrireval error"})
+	if err := Init.DB.Preload("Hotels").Where("available = ? AND active = ?", true, true).Find(&banners).Error; err != nil {
+		c.JSON(400, gin.H{"error": "banner retrieval error"})
 		return
 	}
 
-	c.JSON(200, gin.H{"status": banner})
+	c.JSON(200, gin.H{"status": banners})
 }

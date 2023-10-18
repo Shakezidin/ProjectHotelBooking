@@ -1,225 +1,107 @@
 package user
 
-// import (
-// 	"net/http"
-// 	"time"
+import (
+	"github.com/gin-gonic/gin"
+	Init "github.com/shaikhzidhin/initializer"
+	"github.com/shaikhzidhin/models"
+	"gorm.io/gorm"
+)
 
-// 	"github.com/gin-gonic/gin"
-// 	"github.com/shaikhzidhin/models"
-// )
+func CancelBooking(c *gin.Context) {
+	bookingID := c.Query("id")
+	var booking models.Booking
 
-// func Cancellation(c *gin.Context) {
-// 	// Parse request body
-// 	var requestBody struct {
-// 		BookingID        uint   `json:"bookingId"`
-// 		RoomCancellation string `json:"roomCancellation"`
-// 	}
-// 	if err := c.ShouldBindJSON(&requestBody); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
+	if err := Init.DB.Where("id = ?", bookingID).First(&booking).Error; err != nil {
+		c.JSON(400, gin.H{"error": "No bookings found"})
+		return
+	}
 
-// 	// Get the booking
-// 	var booking models.Booking
-// 	if err := db.First(&booking, requestBody.BookingID).Error; err != nil {
-// 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
-// 		return
-// 	}
+	if booking.Cancelled == "Cancelled" {
+		c.JSON(400, gin.H{"Error": "This order has already been canceled"})
+		return
+	}
 
-// 	// Parse booking dates
-// 	checkin := booking.CheckInDate
-// 	checkout := booking.CheckOutDate
-// 	currentDate := time.Now()
-// 	userID := booking.User
+	tx := Init.DB.Begin() // Start a database transaction
 
-// 	// Calculate amount to refund
-// 	amountRefund := booking.PaymentAmount
+	ownerID := booking.OwnerID
+	var owner models.Owner
+	if err := tx.Where("id = ?", ownerID).First(&owner).Error; err != nil {
+		tx.Rollback() // Rollback the transaction
+		c.JSON(400, gin.H{"Error": "Error while fetching owner"})
+		return
+	}
 
-// 	switch requestBody.RoomCancellation {
-// 	case "Free cancellation upto 24hrs before checkin date":
-// 		// Check the time difference
-// 		timeDifference := checkin.Sub(currentDate)
-// 		hoursDifference := int(timeDifference.Hours())
+	cancellationID := booking.CancellationID
+	var cancellation models.Cancellation
+	if err := tx.Where("id = ?", cancellationID).First(&cancellation).Error; err != nil {
+		tx.Rollback() // Rollback the transaction
+		c.JSON(400, gin.H{"error": "Cancellation fetching error"})
+		return
+	}
 
-// 		if hoursDifference >= 24 {
-// 			// Perform refund and return success
-// 			err := userWallet(userID, amountRefund, booking.ID)
-// 			if err != nil {
-// 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 				return
-// 			}
-// 			c.Status(http.StatusOK)
-// 			return
-// 		}
+	refundPercentage := cancellation.RefundAmountPercentage
 
-// 	case "Non-Refundable":
-// 		// Perform cancellation (no refund) and return unauthorized status
-// 		err := cancelBooking(booking.ID, booking.Room)
-// 		if err != nil {
-// 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 			return
-// 		}
-// 		c.Status(http.StatusUnauthorized)
-// 		return
+	// Calculate the refund amount for the user's wallet based on the cancellation scheme
+	refundAmount := (float64(refundPercentage) / 100) * booking.PaymentAmount
 
-// 	case "Canceling within 7 days before checkin":
-// 		// Check the time difference in days
-// 		daysDifference := int(checkin.Sub(currentDate).Hours() / 24)
+	// Calculate admin and owner revenue adjustments
+	adminRevenueAdjustment := (refundAmount * 1 / 4) // Admin gets 1/4 of the refund
+	ownerRevenueAdjustment := (refundAmount * 3 / 4) // Owner gets 3/4 of the refund
 
-// 		if daysDifference >= 7 {
-// 			// Perform refund and return success
-// 			err := userWallet(userID, amountRefund, booking.ID)
-// 			if err != nil {
-// 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 				return
-// 			}
-// 			c.Status(http.StatusOK)
-// 			return
-// 		}
+	// Update admin and owner revenues
+	if err := tx.Model(&models.Revenue{}).Where("owner_id = ?", ownerID).Update("admin_revenue", gorm.Expr("admin_revenue - ?", adminRevenueAdjustment)).Error; err != nil {
+		tx.Rollback() // Rollback the transaction
+		c.JSON(400, gin.H{"error": "Admin revenue updating error"})
+		return
+	}
 
-// 	case "Free Cancellation before checkin date":
-// 		if currentDate.Before(checkin) {
-// 			// Perform refund and return success
-// 			err := userWallet(userID, amountRefund, booking.ID)
-// 			if err != nil {
-// 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 				return
-// 			}
-// 			c.Status(http.StatusOK)
-// 			return
-// 		}
-// 	}
+	if err := tx.Model(&models.Owner{}).Where("id = ?", ownerID).Update("Revenue", gorm.Expr("Revenue - ?", ownerRevenueAdjustment)).Error; err != nil {
+		tx.Rollback() // Rollback the transaction
+		c.JSON(400, gin.H{"error": "Owner revenue updating error"})
+		return
+	}
 
-// 	// If the cancellation policy doesn't meet any conditions, cancel the booking (no refund)
-// 	err := cancelBooking(booking.ID, booking.Room)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 		return
-// 	}
-// 	c.Status(http.StatusUnauthorized)
-// }
+	// Update the booking's cancellation status and save it to the database
+	if err := tx.Model(&models.Booking{}).Where("id = ?", bookingID).Update("Cancelled", "Cancelled").Error; err != nil {
+		tx.Rollback() // Rollback the transaction
+		c.JSON(400, gin.H{"error": "Booking status updating error"})
+		return
+	}
 
-// func userWallet(userID, amount, bookingId) {
-// 	date := time.Now()
-// 	formattedDate := date.Format("2006-01-02")
-// 	adminAmount := (15 / 100) * request.Amount
-// 	ownerAmount := (85 / 100) * request.Amount
+	// Calculate the refund amount for the user's wallet
+	userID := booking.UserID
+	userWallet := GetUserWallet(tx, userID)
 
-// 	// Update the user's wallet balance and transaction
-// 	var user User
-// 	if err := db.First(&user, request.UserID).Error; err != nil {
-// 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-// 		return
-// 	}
+	if userWallet != nil {
+		userWallet.Balance += refundAmount
 
-// 	db.Model(&user).Update("Wallet.Balance", user.Wallet.Balance+request.Amount)
-// 	db.Model(&user).Association("Wallet.Transactions").Append(&Transaction{
-// 		Date:    formattedDate,
-// 		Details: "Cancelled the booking",
-// 		Amount:  request.Amount,
-// 	})
+		// Update the user's wallet balance in the database
+		if err := tx.Save(userWallet).Error; err != nil {
+			tx.Rollback() // Rollback the transaction
+			c.JSON(400, gin.H{"error": "User wallet balance updating error"})
+			return
+		}
+	} else {
+		tx.Rollback() // Rollback the transaction
+		c.JSON(400, gin.H{"error": "User wallet not found"})
+		return
+	}
 
-// 	// Update the booking
-// 	var booking Booking
-// 	if err := db.First(&booking, request.BookingID).Error; err != nil {
-// 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
-// 		return
-// 	}
-// 	booking.Cancel = true
-// 	booking.Refund = true
-// 	db.Save(&booking)
+	// Commit the transaction
+	if err := tx.Commit().Error; err != nil {
+		c.JSON(400, gin.H{"error": "Transaction commit error"})
+		return
+	}
 
-// 	// Update the room
-// 	var room Room
-// 	if err := db.First(&room, booking.Room).Error; err != nil {
-// 		c.JSON(http.StatusNotFound, gin.H{"error": "Room not found"})
-// 		return
-// 	}
+	// Respond with a success message
+	c.JSON(200, gin.H{"message": "Booking canceled successfully"})
+}
 
-// 	roomIndex := -1
-// 	for i, roomInfo := range room.AvailableRooms {
-// 		if roomInfo.RoomNo == booking.RoomNo {
-// 			roomIndex = i
-// 			break
-// 		}
-// 	}
-
-// 	if roomIndex != -1 {
-// 		room.AvailableRooms[roomIndex].RemoveCheckinCheckout(booking.CheckInDate, booking.CheckOutDate)
-// 		db.Save(&room)
-// 	}
-
-// 	// Update the hotel
-// 	var hotel Hotel
-// 	if err := db.First(&hotel, booking.Hotel).Error; err != nil {
-// 		c.JSON(http.StatusNotFound, gin.H{"error": "Hotel not found"})
-// 		return
-// 	}
-// 	db.Model(&hotel).Update("Revenue", hotel.Revenue-ownerAmount)
-
-// 	// Update the owner
-// 	var owner Owner
-// 	if err := db.First(&owner, hotel.Owner).Error; err != nil {
-// 		c.JSON(http.StatusNotFound, gin.H{"error": "Owner not found"})
-// 		return
-// 	}
-// 	db.Model(&owner).Update("Revenue", owner.Revenue-ownerAmount)
-
-// 	// Update admin revenue (assuming you have an AdminRevenue model)
-// 	var adminRevenue AdminRevenue
-// 	if db.Where("Owner = ?", owner.ID).First(&adminRevenue).RecordNotFound() {
-// 		// AdminRevenue record not found, create a new one
-// 		adminRevenue.Owner = owner.ID
-// 		adminRevenue.Revenue = -adminAmount
-// 		db.Create(&adminRevenue)
-// 	} else {
-// 		// AdminRevenue record found, update the revenue
-// 		db.Model(&adminRevenue).Update("Revenue", adminRevenue.Revenue-adminAmount)
-// 	}
-
-// 	c.Status(http.StatusOK)
-// }
-
-// func CancelBooking(c *gin.Context) {
-// 	var request struct {
-// 		BookingID uint `json:"bookingId"`
-// 		RoomID    uint `json:"roomId"`
-// 	}
-
-// 	if err := c.ShouldBindJSON(&request); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
-
-// 	// Update the booking
-// 	var booking Booking
-// 	if err := db.First(&booking, request.BookingID).Error; err != nil {
-// 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
-// 		return
-// 	}
-
-// 	booking.Cancel = true
-// 	db.Save(&booking)
-
-// 	// Update the room
-// 	var room Room
-// 	if err := db.First(&room, request.RoomID).Error; err != nil {
-// 		c.JSON(http.StatusNotFound, gin.H{"error": "Room not found"})
-// 		return
-// 	}
-
-// 	roomIndex := -1
-// 	for i, roomInfo := range room.AvailableRooms {
-// 		if roomInfo.RoomNo == booking.RoomNo {
-// 			roomIndex = i
-// 			break
-// 		}
-// 	}
-
-// 	if roomIndex != -1 {
-// 		room.AvailableRooms[roomIndex].RemoveCheckinCheckout(booking.CheckInDate, booking.CheckOutDate)
-// 		db.Save(&room)
-// 	}
-
-// 	c.Status(http.StatusOK)
-// }
+// GetUserWallet helps to get user wallet by user id
+func GetUserWallet(tx *gorm.DB, userID uint) *models.Wallet {
+	var wallet models.Wallet
+	if err := tx.Where("user_id = ?", userID).First(&wallet).Error; err != nil {
+		return nil
+	}
+	return &wallet
+}

@@ -2,6 +2,7 @@ package models
 
 import "gorm.io/gorm"
 
+//Owner Model
 type Owner struct {
 	gorm.Model
 	Name     string `json:"name"`
@@ -10,5 +11,5 @@ type Owner struct {
 	Phone    string `json:"phone" gorm:"not null;unique" validate:"required"`
 	Revenue  int    `json:"revenue" gorm:"default=0"`
 	Password string `json:"password" gorm:"not noll" validate:"required"`
-	Is_Block bool   `json:"is_block" gorm:"default=false"`
+	IsBlocked bool   `json:"is_block" gorm:"default=false"`
 }

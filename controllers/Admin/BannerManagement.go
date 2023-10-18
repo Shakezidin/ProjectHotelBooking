@@ -4,24 +4,22 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	Init "github.com/shaikhzidhin/initiializer"
+	Init "github.com/shaikhzidhin/initializer"
 	"github.com/shaikhzidhin/models"
 )
 
+// BannerView returns all banners.
 func BannerView(c *gin.Context) {
 	var banners []models.Banner
 	if err := Init.DB.Preload("Owner").Preload("Hotels").Find(&banners).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "error while fetching banner",
-		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error while fetching banners"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"banners": banners,
-	})
+	c.JSON(http.StatusOK, gin.H{"banners": banners})
 }
 
+// BannerSetActive toggles the "Active" status of a banner.
 func BannerSetActive(c *gin.Context) {
 	id := c.Query("id")
 
@@ -42,9 +40,10 @@ func BannerSetActive(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "success"})
+	c.JSON(http.StatusOK, gin.H{"status": "Success"})
 }
 
+// BannerDetails returns details of a specific banner.
 func BannerDetails(c *gin.Context) {
 	bannerID := c.Query("id")
 
@@ -59,11 +58,10 @@ func BannerDetails(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"banner": banner,
-	})
+	c.JSON(http.StatusOK, gin.H{"banner": banner})
 }
 
+// DeleteBanner deletes a banner.
 func DeleteBanner(c *gin.Context) {
 	bannerID := c.Query("id")
 
@@ -78,5 +76,5 @@ func DeleteBanner(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, gin.H{"status": "Deleted"})
+	c.JSON(http.StatusOK, gin.H{"status": "Deleted"})
 }

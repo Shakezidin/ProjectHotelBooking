@@ -3,24 +3,19 @@ package helper
 import (
 	"time"
 
-	Init "github.com/shaikhzidhin/initiializer"
+	"github.com/shaikhzidhin/initializer"
+	Init "github.com/shaikhzidhin/initializer"
 )
 
+// FindAvailableRoomIDs retrieves room IDs that are available for a specific date range.
 func FindAvailableRoomIDs(fromDate, toDate time.Time, roomIDs []uint) ([]uint, error) {
 	var availableRoomIDs []uint
-	rows, err := Init.DB.Raw(`
-        SELECT DISTINCT rooms.id as room_id
+	rows, err := initializer.DB.Raw(`
+        SELECT rooms.id as room_id
         FROM rooms
         LEFT JOIN available_rooms ON rooms.id = available_rooms.room_id
-        WHERE rooms.id IN (?) AND rooms.is_available = ? 
-        AND (
-            (available_rooms.room_id IS NULL) OR
-            (
-                NOT (? < ANY(available_rooms.check_in) AND ? < ANY(available_rooms.checkout)) AND 
-                NOT (? > ANY(available_rooms.check_in) AND ? > ANY(available_rooms.checkout))
-            )
-        )
-    `, roomIDs, true, toDate, fromDate, fromDate, toDate).Rows()
+        WHERE rooms.id IN (?) AND rooms.is_available = ?
+        `, roomIDs, true).Rows()
 	if err != nil {
 		return nil, err
 	}
@@ -38,6 +33,7 @@ func FindAvailableRoomIDs(fromDate, toDate time.Time, roomIDs []uint) ([]uint, e
 	return availableRoomIDs, nil
 }
 
+// GetRoomCountsByCategory helps to count the room catagory numbers
 func GetRoomCountsByCategory() (map[string]int, error) {
 	roomCounts := make(map[string]int)
 

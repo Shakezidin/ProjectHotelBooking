@@ -2,9 +2,10 @@ package models
 
 import "gorm.io/gorm"
 
+//Revenue model of admin
 type Revenue struct {
 	gorm.Model
 	AdminRevenue int   `gorm:"not null"`
-	OwnerId      uint  `gorm:"not null"`
-	Owner        Owner `gorm:"ForeignKey:OwnerId"`
+	OwnerID      uint  `gorm:"not null"`
+	Owner        Owner `gorm:"ForeignKey:OwnerID"`
 }

@@ -1,6 +1,7 @@
 package models
 
-type Admin struct{
+//Admin model 
+type Admin struct {
 	UserName string
-	Password  string
+	Password string
 }

@@ -2,67 +2,59 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/shaikhzidhin/controllers/HotelOwner"
+	Admin "github.com/shaikhzidhin/controllers/Admin"
+	"github.com/shaikhzidhin/controllers/hotelowner"
 	"github.com/shaikhzidhin/middleware"
 )
 
+//OwnerRoutes Set up routes for the owner section of the application.
 func OwnerRoutes(c *gin.Engine) {
-
 	owner := c.Group("/owner")
-	{
-		//<<<<<<<<<<<<<<<<<< Owner Signup & login >>>>>>>>>>>>>
-		owner.POST("/singup", HotelOwner.OwnerSignUp)
-		owner.POST("/signup/verification", HotelOwner.OwnerSingupVerification)
-		owner.POST("/login", HotelOwner.OwnerLogin)
 
-		//<<<<<<<<<<<<<<<<<< Owner DashBord >>>>>>>>>>>>>>>>>>
-		owner.GET("/home", middleware.AuthMiddleWare, HotelOwner.GetOwnerDashboard)
-		owner.GET("/profile", middleware.AuthMiddleWare, HotelOwner.OwnerProfile)
-		owner.PATCH("/profile/edit", middleware.AuthMiddleWare, HotelOwner.ProfileEdit)
+	// Owner Signup & login routes
+	owner.POST("/signup", hotelowner.OwnerSignUp)
+	owner.POST("/signup/verification", hotelowner.OwnerSignUpVerification)
+	owner.POST("/login", hotelowner.OwnerLogin)
 
-		hotel := owner.Group("/hotel")
-		{
-			//<<<<<<<<< MiddleWare >>>>>>>>>>>>
-			hotel.Use(middleware.AuthMiddleWare)
+	// Owner Dashboard routes
+	owner.GET("/home", middleware.AuthMiddleWare, hotelowner.GetOwnerDashboard)
+	owner.GET("/profile", middleware.AuthMiddleWare, hotelowner.OwnerProfile)
+	owner.PATCH("/profile/edit", middleware.AuthMiddleWare, hotelowner.ProfileEdit)
 
-			//<<<<<<<<<<<< Hotel Management >>>>>>>>>>>>>>>>
-			hotel.POST("/add", HotelOwner.AddHotel)
-			hotel.GET("/view/hotel", HotelOwner.ViewSpecificHotel)
-			hotel.GET("/view/hotels", HotelOwner.ViewHotels)
-			hotel.PATCH("/edit", HotelOwner.Hoteledit)
-			hotel.DELETE("/delete", HotelOwner.DeleteHotel)
-			hotel.GET("/availability", HotelOwner.HotelAvailability)
-			hotel.GET("/fecilities", HotelOwner.ViewHotelFecilities)
-		}
-		room := owner.Group("/room")
-		{
-			//<<<<<<<<< MiddleWare >>>>>>>>>>>>
-			room.Use(middleware.AuthMiddleWare)
+	hotel := owner.Group("/hotel")
+	// hotel.Use(middleware.AuthMiddleWare)
 
-			//<<<<<<<<<<<< Room Management >>>>>>>>>>>>>>>>>
-			room.GET("/fecilities", HotelOwner.ViewRoomfecilities)
-			room.GET("/cancellation", HotelOwner.ViewCancellation)
-			room.GET("/category", HotelOwner.ViewRoomCatagory)
+	// Hotel Management routes
+	hotel.POST("/add", hotelowner.AddHotel)
+	hotel.GET("/view/hotel", hotelowner.ViewSpecificHotel)
+	hotel.GET("/view/hotels", hotelowner.ViewHotels)
+	hotel.PATCH("/edit", hotelowner.Hoteledit)
+	hotel.DELETE("/delete", hotelowner.DeleteHotel)
+	hotel.GET("/availability", hotelowner.HotelAvailability)
+	hotel.GET("/fecilities", Admin.ViewHotelFacilities)
 
-			room.POST("/add", HotelOwner.AddingRoom)
-			room.PATCH("/edit", HotelOwner.EditRoom)
-			room.GET("/view/rooms", HotelOwner.ViewRooms)
-			room.GET("/view/room", HotelOwner.ViewspecificRoom)
-			room.GET("/availability", HotelOwner.RoomAvailability)
-			room.DELETE("/delete", HotelOwner.DeleteRoom)
-		}
-		banner := owner.Group("/banner")
-		{
-			//<<<<<<<<< MiddleWare >>>>>>>>>>>>
-			banner.Use(middleware.AuthMiddleWare)
+	room := owner.Group("/room")
+	// room.Use(middleware.AuthMiddleWare)
 
-			//<<<<<<<<<Banner Management >>>>>>>>>>>>>>>
-			banner.GET("/view", HotelOwner.ViewBanners)
-			banner.POST("/add", HotelOwner.AddBanner)
-			banner.PATCH("/edit", HotelOwner.UpdateBanner)
-			banner.GET("/availability", HotelOwner.AvailableBanner)
-			banner.DELETE("/delete", HotelOwner.DeleteBanner)
-		}
-	}
+	// Room Management routes
+	room.GET("/fecilities", Admin.ViewRoomFacilities)
+	room.GET("/cancellation", Admin.ViewRoomCancellation)
+	room.GET("/category", Admin.ViewRoomCategories)
 
+	room.POST("/add", hotelowner.AddingRoom)
+	room.PATCH("/edit", hotelowner.EditRoom)
+	room.GET("/view/rooms", hotelowner.ViewRooms)
+	room.GET("/view/room", hotelowner.ViewSpecificRoom)
+	room.GET("/availability", hotelowner.RoomAvailability)
+	room.DELETE("/delete", hotelowner.DeleteRoom)
+
+	banner := owner.Group("/banner")
+	// banner.Use(middleware.AuthMiddleWare)
+
+	// Banner Management routes
+	banner.GET("/view", hotelowner.ViewBanners)
+	banner.POST("/add", hotelowner.AddBanner)
+	banner.PATCH("/edit", hotelowner.UpdateBanner)
+	banner.GET("/availability", hotelowner.AvailableBanner)
+	banner.DELETE("/delete", hotelowner.DeleteBanner)
 }

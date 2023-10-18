@@ -1,45 +1,34 @@
-package HotelOwner
+package hotelowner
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	Auth "github.com/shaikhzidhin/Auth"
-	Init "github.com/shaikhzidhin/initiializer"
+	Init "github.com/shaikhzidhin/initializer"
 	"github.com/shaikhzidhin/models"
 )
 
-// >>>>>>>>>>>>>> view fecilities <<<<<<<<<<<<<<<<<<<<<<<<<<
-func ViewHotelFecilities(c *gin.Context) {
-	var fecilities []models.HotelAmenities
-	if err := Init.DB.Find(&fecilities).Error; err != nil {
-		c.JSON(400, gin.H{"msg": err.Error()})
-		return
-	}
-	// var hotel models.Hotel
-	c.JSON(200, gin.H{
-		"fecilities": fecilities,
-		// "hotel": hotel,
-	})
-}
-
-// >>>>>>>>>>>>>> Add hotel <<<<<<<<<<<<<<<<<<<<<<<<<<
+// AddHotel adds a new hotel.
 func AddHotel(c *gin.Context) {
 	var hotel models.Hotels
 	if err := c.ShouldBindJSON(&hotel); err != nil {
 		c.JSON(400, gin.H{
-			"msg":   "binding error1",
-			"error": err,
+			"message": "binding error",
+			"error":   err,
 		})
 		c.Abort()
 		return
 	}
 
+	fmt.Println(hotel)
+
 	validationErr := validate.Struct(hotel)
 	if validationErr != nil {
 		c.JSON(400, gin.H{
-			"msg":   "validate error2",
-			"error": validationErr.Error(),
+			"message": "validation error",
+			"error":   validationErr.Error(),
 		})
 		c.Abort()
 		return
@@ -48,90 +37,84 @@ func AddHotel(c *gin.Context) {
 	header := c.Request.Header.Get("Authorization")
 	username, err := Auth.Trim(header)
 	if err != nil {
-		c.JSON(404, gin.H{"error": "username didnt get"})
+		c.JSON(404, gin.H{"error": "username didn't get"})
 		return
 	}
 	hotel.OwnerUsername = username
 	result := Init.DB.Create(&hotel)
 	if result.Error != nil {
 		c.JSON(404, gin.H{
-			"Error": result.Error.Error(),
+			"error": result.Error.Error(),
 		})
 		return
 	}
-	c.JSON(200, gin.H{"status": "success"})
+	c.JSON(200, gin.H{"status": "hotel added"})
 }
 
-// >>>>>>>>>>>>>> view hotels <<<<<<<<<<<<<<<<<<<<<<<<<<
-
+// ViewHotels retrieves all hotels owned by the user.
 func ViewHotels(c *gin.Context) {
-	var hotel []models.Hotels
+	var hotels []models.Hotels
 	header := c.Request.Header.Get("Authorization")
 	username, err := Auth.Trim(header)
 	if err != nil {
-		c.JSON(404, gin.H{"error": "username didnt get"})
+		c.JSON(404, gin.H{"error": "username didn't get"})
 		return
 	}
-	if err := Init.DB.Preload("HotelCategory").Where("owner_username = ?", username).Find(&hotel).Error; err != nil {
+	if err := Init.DB.Preload("HotelCategory").Where("owner_username = ?", username).Find(&hotels).Error; err != nil {
 		c.JSON(500, gin.H{"error": "Internal Server Error"})
 		return
 	}
 
-	c.JSON(200, gin.H{
-		"msg": hotel,
-	})
+	c.JSON(200, gin.H{"hotels": hotels})
 }
 
-// >>>>>>>>>>>>>> view specific hotel <<<<<<<<<<<<<<<<<<<<<<<<<<
+// ViewSpecificHotel retrieves a specific hotel by its ID.
 func ViewSpecificHotel(c *gin.Context) {
-	hotelIDStr := c.DefaultQuery("id", "")
+	hotelIDStr := c.Query("id")
 	if hotelIDStr == "" {
-		c.JSON(400, gin.H{"error": "hotelid query parameter is missing"})
+		c.JSON(400, gin.H{"error": "hotel ID query parameter is missing"})
 		return
 	}
-	hotelId, err := strconv.Atoi(hotelIDStr)
+	hotelID, err := strconv.Atoi(hotelIDStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "convert error"})
+		c.JSON(400, gin.H{"error": "conversion error"})
 		return
 	}
 	var hotel models.Hotels
 
-	if err := Init.DB.Where("id = ?", uint(hotelId)).First(&hotel).Error; err != nil {
+	if err := Init.DB.Where("id = ?", uint(hotelID)).First(&hotel).Error; err != nil {
 		c.JSON(500, gin.H{
-			"msg": err.Error(),
+			"message": err.Error(),
 		})
 		c.Abort()
 		return
 	}
-	c.JSON(200, gin.H{
-		"msg": hotel,
-	})
+	c.JSON(200, gin.H{"hotel": hotel})
 }
 
-// >>>>>>>>>>>>>> hotel Update <<<<<<<<<<<<<<<<<<<<<<<<<<
-
+// Hoteledit updates a hotel's details.
 func Hoteledit(c *gin.Context) {
-	hotelIDStr := c.DefaultQuery("id", "")
+	hotelIDStr := c.Query("id")
 	if hotelIDStr == "" {
-		c.JSON(400, gin.H{"error": "hotelid query parameter is missing"})
+		c.JSON(400, gin.H{"error": "hotel ID query parameter is missing"})
 		return
 	}
-	hotelId, err := strconv.Atoi(hotelIDStr)
+	hotelID, err := strconv.Atoi(hotelIDStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "convert error"})
+		c.JSON(400, gin.H{"error": "conversion error"})
 		return
 	}
 	header := c.Request.Header.Get("Authorization")
 	username, err := Auth.Trim(header)
 	if err != nil {
-		c.JSON(404, gin.H{"error": "username didnt get"})
+		c.JSON(404, gin.H{"error": "username didn't get"})
 		return
 	}
 
 	var hotel models.Hotels
-	if err := Init.DB.Where("owner_username = ? AND id = ?", username, uint(hotelId)).First(&hotel).Error; err != nil {
+	if err := Init.DB.Where("owner_username = ? AND id = ?", username, uint(hotelID)).First(&hotel).Error; err != nil {
 		c.JSON(500, gin.H{
-			"msg": err.Error(),
+			"message": err.Error(),
 		})
 		c.Abort()
 		return
@@ -147,13 +130,14 @@ func Hoteledit(c *gin.Context) {
 		Address       string  `json:"address" validate:"required"`
 		Images        string  `json:"images" validate:"required"`
 		TypesOfRoom   int     `json:"typesofroom" validate:"required"`
+		CategoryID    uint    `json:"category_id" validate:"required"`
 		IsBlock       bool
 	}
 
 	if err := c.BindJSON(&updatedHotel); err != nil {
 		c.JSON(400, gin.H{
-			"msg":   "binding error1",
-			"error": err,
+			"message": "binding error",
+			"error":   err,
 		})
 		c.Abort()
 		return
@@ -169,67 +153,60 @@ func Hoteledit(c *gin.Context) {
 	hotel.Address = updatedHotel.Address
 	hotel.Images = updatedHotel.Images
 	hotel.TypesOfRoom = updatedHotel.TypesOfRoom
+	hotel.HotelCategoryID = updatedHotel.CategoryID
 	hotel.IsBlock = true
 
 	// Save the updated hotel record
 	result := Init.DB.Save(&hotel)
 	if result.Error != nil {
 		c.JSON(404, gin.H{
-			"Error": result.Error.Error(),
+			"error": result.Error.Error(),
 		})
 		return
 	}
 
-	c.JSON(200, gin.H{"status": "hotel updation success"})
+	c.JSON(200, gin.H{"status": "hotel updated"})
 }
 
-// >>>>>>>>>>>>>> hotel availability <<<<<<<<<<<<<<<<<<<<<<<<<<
-
+// HotelAvailability updates the availability status of a hotel.
 func HotelAvailability(c *gin.Context) {
 	hotelIDStr := c.DefaultQuery("id", "")
 	if hotelIDStr == "" {
-		c.JSON(400, gin.H{"error": "hotelid query parameter is missing"})
+		c.JSON(400, gin.H{"error": "hotel ID query parameter is missing"})
 		return
 	}
-	hotelId, err := strconv.Atoi(hotelIDStr)
+	hotelID, err := strconv.Atoi(hotelIDStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "convert error"})
+		c.JSON(400, gin.H{"error": "conversion error"})
 		return
 	}
 
 	var hotel models.Hotels
-	if err := Init.DB.First(&hotel, hotelId).Error; err != nil {
-		c.JSON(404, gin.H{
-			"error": "Room not found",
-		})
+	if err := Init.DB.First(&hotel, hotelID).Error; err != nil {
+		c.JSON(404, gin.H{"error": "hotel not found"})
 		return
 	}
 
 	hotel.IsAvailable = !hotel.IsAvailable
 
 	if err := Init.DB.Save(&hotel).Error; err != nil {
-		c.JSON(500, gin.H{
-			"error": "Failed to save Room availability",
-		})
+		c.JSON(500, gin.H{"error": "failed to save hotel availability"})
 		return
 	}
 
-	c.JSON(200, gin.H{
-		"status": "hotel availability updated",
-	})
+	c.JSON(200, gin.H{"status": "hotel availability updated"})
 }
 
-// >>>>>>>>>>>>>> delete hotel<<<<<<<<<<<<<<<<<<<<<<<<<<
-
+// DeleteHotel deletes a hotel.
 func DeleteHotel(c *gin.Context) {
 	hotelIDStr := c.DefaultQuery("id", "")
 	if hotelIDStr == "" {
-		c.JSON(400, gin.H{"error": "hotelid query parameter is missing"})
+		c.JSON(400, gin.H{"error": "hotel ID query parameter is missing"})
 		return
 	}
-	hotelId, err := strconv.Atoi(hotelIDStr)
+	hotelID, err := strconv.Atoi(hotelIDStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "convert error"})
+		c.JSON(400, gin.H{"error": "conversion error"})
 		return
 	}
 	header := c.Request.Header.Get("Authorization")
@@ -239,7 +216,7 @@ func DeleteHotel(c *gin.Context) {
 		return
 	}
 
-	result := Init.DB.Where("owner_username = ? AND id = ?", username, uint(hotelId)).Delete(&models.Hotels{})
+	result := Init.DB.Where("owner_username = ? AND id = ?", username, uint(hotelID)).Delete(&models.Hotels{})
 	if result.Error != nil {
 		c.JSON(500, gin.H{"error": result.Error.Error()})
 		return
@@ -248,5 +225,5 @@ func DeleteHotel(c *gin.Context) {
 		c.JSON(404, gin.H{"error": "hotel not found"})
 		return
 	}
-	c.JSON(200, gin.H{"msg": "deleted"})
+	c.JSON(200, gin.H{"message": "hotel deleted"})
 }

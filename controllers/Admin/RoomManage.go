@@ -4,44 +4,40 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	Init "github.com/shaikhzidhin/initiializer"
+	Init "github.com/shaikhzidhin/initializer"
 	"github.com/shaikhzidhin/models"
 )
 
-func BlockedRooms(c *gin.Context) {
-	var room models.Rooms
-
-	if err := Init.DB.Preload("Cancellation").Preload("Hotels").Preload("RoomCategory").Where("is_blocked", true).Find(&room).Error; err != nil {
-		c.JSON(400, gin.H{"error": "fetching blocked rooms error"})
+//ViewRooms returns rooms
+func ViewRooms(c *gin.Context) {
+	var rooms []models.Rooms
+	if err := Init.DB.Find(&rooms).Error; err != nil {
+		c.JSON(400, gin.H{"error": "error while fetching rooms"})
 		return
 	}
-
-	c.JSON(200, gin.H{"blocked hotels": room})
+	c.JSON(200, gin.H{"rooms": rooms})
 }
 
-// func OwnerRooms(c *gin.Context) {
-// 	username := c.DefaultQuery("owner_username", "")
-// 	if username == "" {
-// 		c.JSON(400, gin.H{"error": "owner username query parameter is missing"})
-// 		return
-// 	}
-// 	var rooms []models.Rooms
+// BlockedRooms returns a list of all blocked rooms.
+func BlockedRooms(c *gin.Context) {
+	var rooms []models.Rooms
 
-// 	if err := Init.DB.Preload("Cancellation").Preload("Hotels").Preload("RoomCategory").Where("owner_username = ?", username).Find(&rooms).Error; err != nil {
-// 		c.JSON(400, gin.H{"error": err})
-// 		return
-// 	}
-
-// 	c.JSON(200, gin.H{"hotels": rooms})
-// }
-
-func BlockandUnblockRooms(c *gin.Context) {
-	RoomIDStr := c.DefaultQuery("id", "")
-	if RoomIDStr == "" {
-		c.JSON(400, gin.H{"error": "roomid query parameter is missing"})
+	if err := Init.DB.Preload("Cancellation").Preload("Hotels").Preload("RoomCategory").Where("is_blocked", true).Find(&rooms).Error; err != nil {
+		c.JSON(400, gin.H{"error": "Error while fetching blocked rooms"})
 		return
 	}
-	roomID, err := strconv.Atoi(RoomIDStr)
+
+	c.JSON(200, gin.H{"blocked rooms": rooms})
+}
+
+// BlockAndUnblockRooms toggles the 'IsBlocked' field of a room.
+func BlockAndUnblockRooms(c *gin.Context) {
+	roomIDStr := c.DefaultQuery("id", "")
+	if roomIDStr == "" {
+		c.JSON(400, gin.H{"error": "room ID query parameter is missing"})
+		return
+	}
+	roomID, err := strconv.Atoi(roomIDStr)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "convert error"})
 		return
@@ -66,24 +62,26 @@ func BlockandUnblockRooms(c *gin.Context) {
 	c.JSON(200, gin.H{"status": "Room block updated"})
 }
 
-func RoomsforApproval(c *gin.Context) {
-	var rooms models.Rooms
+// RoomsForApproval returns a list of rooms pending admin approval.
+func RoomsForApproval(c *gin.Context) {
+	var rooms []models.Rooms
 
 	if err := Init.DB.Preload("Cancellation").Preload("Hotels").Preload("RoomCategory").Where("admin_approval = ?", false).Find(&rooms).Error; err != nil {
-		c.JSON(400, gin.H{"error": err})
+		c.JSON(400, gin.H{"error": "Error while fetching rooms pending approval"})
 		return
 	}
 
 	c.JSON(200, gin.H{"approval pending rooms": rooms})
 }
 
+// RoomsApproval toggles the 'AdminApproval' field of a room.
 func RoomsApproval(c *gin.Context) {
-	roomIdStr := c.DefaultQuery("id", "")
-	if roomIdStr == "" {
-		c.JSON(400, gin.H{"error": "roomId query parameter is missing"})
+	roomIDStr := c.DefaultQuery("id", "")
+	if roomIDStr == "" {
+		c.JSON(400, gin.H{"error": "room ID query parameter is missing"})
 		return
 	}
-	roomID, err := strconv.Atoi(roomIdStr)
+	roomID, err := strconv.Atoi(roomIDStr)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "convert error"})
 		return
@@ -105,5 +103,5 @@ func RoomsApproval(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(200, gin.H{"Status": "Room approval updated"})
+	c.JSON(200, gin.H{"status": "Room approval updated"})
 }

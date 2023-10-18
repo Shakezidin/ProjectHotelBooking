@@ -6,50 +6,53 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	auth "github.com/shaikhzidhin/Auth"
-	Init "github.com/shaikhzidhin/initiializer"
+	Init "github.com/shaikhzidhin/initializer"
 	"github.com/shaikhzidhin/models"
 )
 
 var validate = validator.New()
 
-func AdminLogin(c *gin.Context) {
+// Login handles the login of admin users.
+func Login(c *gin.Context) {
 	var adminLogin struct {
-		Username string `json:"username"  validation:"required"`
+		Username string `json:"username" validation:"required"`
 		Password string `json:"password" validation:"required"`
 	}
 	var admin models.Admin
 
+	// Bind the JSON request body to the adminLogin struct
 	if err := c.ShouldBindJSON(&adminLogin); err != nil {
-		c.JSON(400, gin.H{"Error": "Admin Binding error"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
-	validationErr := validate.Struct(admin)
-	if validationErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "validation error1"})
+	// Validate the adminLogin struct
+	if validationErr := validate.Struct(adminLogin); validationErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Validation error"})
 		return
 	}
 
+	// Find the admin user by username
 	result := Init.DB.Where("user_name = ?", adminLogin.Username).First(&admin)
 	if result.Error != nil {
-		c.JSON(400, gin.H{"error": "username not found"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 		return
 	}
 
-	//password verification
+	// Verify the password
 	if err := admin.CheckPassword(adminLogin.Password); err != nil {
-		c.JSON(400, gin.H{
-			"msg": err.Error(),
-		})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 		return
 	}
 
+	// Generate a JWT token
 	tokenString, err := auth.GenerateJWT(admin.UserName)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		c.Abort()
 		return
 	}
 
-	c.JSON(200, gin.H{"loginStatus": "Success", "username": admin.UserName, "token": tokenString})
+	// Respond with success and the token
+	c.JSON(http.StatusOK, gin.H{"status": "Success", "username": admin.UserName, "token": tokenString})
 }

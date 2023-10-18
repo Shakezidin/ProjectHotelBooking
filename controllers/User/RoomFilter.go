@@ -2,17 +2,18 @@ package user
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	helper "github.com/shaikhzidhin/helper"
-	"github.com/shaikhzidhin/initiializer"
-	Init "github.com/shaikhzidhin/initiializer"
+	"github.com/shaikhzidhin/initializer"
+	Init "github.com/shaikhzidhin/initializer"
 	"github.com/shaikhzidhin/models"
 )
 
+// Filter represents filtering criteria for room search.
 type Filter struct {
 	City     string  `json:"city" validate:"required"`
 	MinPrice float64 `json:"minprice" validate:"min=5"`
@@ -24,31 +25,31 @@ type Filter struct {
 	Adults   uint    `json:"adults" validate:"required"`
 }
 
+// RoomFilter filters rooms based on the given criteria.
 func RoomFilter(c *gin.Context) {
 	var filter Filter
 	if err := c.BindJSON(&filter); err != nil {
-		c.JSON(400, gin.H{
-			"msg": err,
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"msg": err})
 		c.Abort()
 		return
 	}
 
 	layout := "2006-01-02"
 
-	fromdate, err := time.Parse(layout, filter.FromDate)
-	todate, err := time.Parse(layout, filter.ToDate)
+	fromDate, err := time.Parse(layout, filter.FromDate)
+	toDate, err := time.Parse(layout, filter.ToDate)
 
-	fromdateStr := fromdate.Format(layout)
-	todateStr := todate.Format(layout)
+	fromDateStr := fromDate.Format(layout)
+	toDateStr := toDate.Format(layout)
 
-	err = initiializer.ReddisClient.Set(context.Background(), "fromdate", fromdateStr, 1*time.Hour).Err()
-	err = initiializer.ReddisClient.Set(context.Background(), "todate", todateStr, 1*time.Hour).Err()
+	err = initializer.ReddisClient.Set(context.Background(), "fromdate", fromDateStr, 1*time.Hour).Err()
+	err = initializer.ReddisClient.Set(context.Background(), "todate", toDateStr, 1*time.Hour).Err()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error inserting in Redis client"})
 		return
 	}
 
+	validate := validator.New()
 	validationErr := validate.Struct(filter)
 	if validationErr != nil {
 		c.JSON(400, gin.H{
@@ -68,7 +69,6 @@ func RoomFilter(c *gin.Context) {
 	var roomIDs []uint
 	for _, hotel := range hotels {
 		var tempRoom []models.Rooms
-		fmt.Println(filter.MinPrice, filter.MaxPrice)
 		if err := Init.DB.Where("children >= ? AND adults >= ? AND hotels_id = ?", filter.Children, filter.Adults, hotel.ID).
 			Where("is_available = ? AND is_blocked = ? AND admin_approval = ?", true, false, true).
 			Where("price >= ? AND price <= ?", filter.MinPrice, filter.MaxPrice).Find(&tempRoom).Error; err != nil {
@@ -79,17 +79,17 @@ func RoomFilter(c *gin.Context) {
 			roomIDs = append(roomIDs, room.ID)
 		}
 	}
-	roomids, err := helper.FindAvailableRoomIDs(fromdate, todate, roomIDs)
-	if err != nil {
+	roomIDs, errr := helper.FindAvailableRoomIDs(fromDate, toDate, roomIDs)
+	if errr != nil {
 		c.JSON(400, gin.H{"Error": "Error while fetching available rooms"})
 		return
 	}
 
 	var availableRooms []models.Rooms
-	if err := Init.DB.Preload("Cancellation").Preload("Hotels").Preload("RoomCategory").Where("id IN (?)", roomids).Order("price " + filter.Orderby).Find(&availableRooms).Error; err != nil {
+	if err := Init.DB.Preload("Cancellation").Preload("Hotels").Preload("RoomCategory").Where("id IN (?)", roomIDs).Order("price " + filter.Orderby).Find(&availableRooms).Error; err != nil {
 		c.JSON(400, gin.H{"error": "Error while fetching available rooms"})
 		return
 	}
 
-	c.JSON(200, gin.H{"hotels": hotels, "rooms": availableRooms})
+	c.JSON(http.StatusOK, gin.H{"hotels": hotels, "rooms": availableRooms})
 }

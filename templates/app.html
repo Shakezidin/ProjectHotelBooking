@@ -16,16 +16,16 @@
     <fieldset disabled>
       <div class="form-group ">
         <label for="disabledTextInput">User ID</label>
-        <input type="text"  class="form-control mt-3" id="userid" value="{{.userid}}">
+        <input type="text"  class="form-control mt-3" id="userid" value="{{.userID}}">
         <script>console.log("------------------in user id----------")</script>
       </div>
       <div class="form-group mt-3">
         <label for="disabledTextInput">order ID</label>
-        <input type="text"  class="form-control mt-3" id="paymentid" value="{{.orderid}}">
+        <input type="text"  class="form-control mt-3" id="paymentid" value="{{.orderID}}">
       </div>
       <div class="form-group mt-3">
         <label for="disabledTextInput">Total Amount</label>
-        <input type="text"  class="form-control mt-3" id="total" value="{{.totalprice}}">
+        <input type="text"  class="form-control mt-3" id="total" value="{{.totalPrice}}">
       </div>
     </fieldset>
     <div class="d-flex justify-content-center">
@@ -59,9 +59,8 @@ var options = {
     "image": "https://example.com/your_logo",
     "order_id": "{{.orderid}}", // Correct the variable name
     "handler": function (response) {
+      console.log(response)
         alert(response.razorpay_payment_id);
-        alert(response.razorpay_order_id);
-        alert(response.razorpay_signature);
         verifyPayment(response, userid, orderid);
     },
     "prefill": {

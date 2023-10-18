@@ -9,13 +9,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	Auth "github.com/shaikhzidhin/Auth"
-	"github.com/shaikhzidhin/initiializer"
-	Init "github.com/shaikhzidhin/initiializer"
+	"github.com/shaikhzidhin/initializer"
+	Init "github.com/shaikhzidhin/initializer"
 	"github.com/shaikhzidhin/models"
 )
 
+// OfflinePayment handles offline payment booking.
 func OfflinePayment(c *gin.Context) {
-	roomIDStr := c.Query("roomid")
+	roomIDStr := c.Query("id")
 	if roomIDStr == "" {
 		c.JSON(400, gin.H{"error": "roomid query parameter is missing"})
 		return
@@ -25,11 +26,12 @@ func OfflinePayment(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "convert error"})
 		return
 	}
+
 	var booking models.Booking
 	header := c.Request.Header.Get("Authorization")
 	username, err := Auth.Trim(header)
 	if err != nil {
-		c.JSON(404, gin.H{"error": "email didnt get"})
+		c.JSON(404, gin.H{"error": "username does not exist"})
 		return
 	}
 
@@ -39,14 +41,14 @@ func OfflinePayment(c *gin.Context) {
 		return
 	}
 
-	fromdateStr, err := initiializer.ReddisClient.Get(context.Background(), "fromdate").Result()
+	fromdateStr, err := initializer.ReddisClient.Get(context.Background(), "fromdate").Result()
 	fmt.Println(fromdateStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error getting 'fromdate' from Redis client"})
 		return
 	}
 
-	todateStr, err := initiializer.ReddisClient.Get(context.Background(), "todate").Result()
+	todateStr, err := initializer.ReddisClient.Get(context.Background(), "todate").Result()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error getting 'todate' from Redis client"})
 		return
@@ -63,49 +65,46 @@ func OfflinePayment(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "Invalid toDate format"})
 		return
 	}
-	code, _ := initiializer.ReddisClient.Get(context.Background(), "couponcode").Result()
-	var coupon models.Coupon
-	if err := Init.DB.Where("coupen_code = ?", code).First(&coupon).Error; err != nil {
-		c.JSON(400, gin.H{"msg": "No coupons Applied"})
-	}
 
-	amountStr, err := initiializer.ReddisClient.Get(context.Background(), "Amount").Result()
+	couponIDStr, _ := initializer.ReddisClient.Get(context.Background(), "couponID").Result()
+	couponID, _ := strconv.Atoi(couponIDStr)
+
+	amountStr, err := initializer.ReddisClient.Get(context.Background(), "Amount").Result()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error getting 'amount' from Redis client"})
 		return
 	}
 	amount, err := strconv.Atoi(amountStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "string convertion"})
+		c.JSON(400, gin.H{"error": "string conversion"})
 	}
-	var room models.Rooms
 
+	var room models.Rooms
 	if err := Init.DB.Where("id = ?", roomID).First(&room).Error; err != nil {
 		c.JSON(400, gin.H{"error": "error while fetching room"})
 		return
 	}
 
-	err = initiializer.ReddisClient.Set(context.Background(), "roomid", room.ID, 1*time.Hour).Err()
+	err = initializer.ReddisClient.Set(context.Background(), "roomid", room.ID, 1*time.Hour).Err()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error inserting in Redis client"})
 		return
 	}
-	var owner models.Owner
-	owenrUsername := room.OwnerUsername
 
-	if err := Init.DB.Where("user_name = ?", owenrUsername).First(&owner).Error; err != nil {
+	var owner models.Owner
+	ownerUsername := room.OwnerUsername
+	if err := Init.DB.Where("user_name = ?", ownerUsername).First(&owner).Error; err != nil {
 		c.JSON(400, gin.H{"error": "Error while fetching owner"})
 		return
 	}
 
 	duration := toDate.Sub(fromDate)
 	days := duration.Hours() / 24
-
 	totalPrice := room.DiscountPrice * days
-	owneramount := totalPrice - ((30 / 100) * totalPrice)
+	ownerAmount := totalPrice - ((30 / 100) * totalPrice)
 
-	booking.UserID = user.User_Id
-	booking.HotelID = room.HotelsId
+	booking.UserID = user.ID
+	booking.HotelID = room.HotelsID
 	booking.RoomID = uint(roomID)
 	booking.OwnerID = owner.ID
 	booking.RoomNo = uint(room.RoomNo)
@@ -115,8 +114,9 @@ func OfflinePayment(c *gin.Context) {
 	booking.PaymentAmount = float64(amount)
 	booking.TotalDays = uint(days)
 	booking.AdminAmount = float64(amount)
-	booking.OwnerAmount = totalPrice - ((30 / 100) * totalPrice)
-	booking.RoomCategoryID = room.RoomCategoryId
+	booking.OwnerAmount = ownerAmount
+	booking.RoomCategoryID = room.RoomCategoryID
+	booking.CancellationID = room.CancellationID
 	booking.BookedAt = time.Now()
 
 	if err := Init.DB.Create(&booking).Error; err != nil {
@@ -124,22 +124,23 @@ func OfflinePayment(c *gin.Context) {
 		return
 	}
 
-	var availablerooms models.AvailableRoom
-	availablerooms.RoomID = room.ID
-	availablerooms.CheckIn = fromDate
-	availablerooms.Checkout = toDate
-	availablerooms.IsAvailable = false
+	var availableRooms models.AvailableRoom
+	availableRooms.BookingID = booking.ID
+	availableRooms.RoomID = room.ID
+	availableRooms.CheckIn = fromDate
+	availableRooms.CheckOut = toDate
+	availableRooms.IsAvailable = false
 
-	Init.DB.Create(&availablerooms)
+	Init.DB.Create(&availableRooms)
 
-	owner.Revenue += int(owneramount)
+	owner.Revenue += int(ownerAmount)
 	Init.DB.Save(&owner)
 
 	adminRevenue := models.Revenue{}
 	Init.DB.First(&adminRevenue, "owner_id= ?", owner.ID)
-	if adminRevenue.OwnerId == 0 {
+	if adminRevenue.OwnerID == 0 {
 		newAdminRevenue := models.Revenue{
-			OwnerId:      owner.ID,
+			OwnerID:      owner.ID,
 			AdminRevenue: amount,
 		}
 		Init.DB.Create(&newAdminRevenue)
@@ -148,12 +149,11 @@ func OfflinePayment(c *gin.Context) {
 		Init.DB.Save(&adminRevenue)
 	}
 
-	var usedcoupen models.UsedCoupen
+	var usedCoupon models.UsedCoupon
+	usedCoupon.CouponID = uint(couponID)
+	usedCoupon.UserID = user.ID
 
-	usedcoupen.CouponId = coupon.ID
-	usedcoupen.Username = username
-
-	if err := Init.DB.Create(&usedcoupen).Error; err != nil {
+	if err := Init.DB.Create(&usedCoupon).Error; err != nil {
 		c.JSON(400, gin.H{"error": "usedcoupon creation error"})
 		return
 	}

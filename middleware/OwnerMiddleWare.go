@@ -5,10 +5,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	auth "github.com/shaikhzidhin/Auth"
-	Init "github.com/shaikhzidhin/initiializer"
+	Init "github.com/shaikhzidhin/initializer"
 	"github.com/shaikhzidhin/models"
 )
 
+//AuthMiddleWare for OwnerVerificaton
 func AuthMiddleWare(c *gin.Context) {
 	header := c.Request.Header.Get("Authorization")
 	if header == "" {

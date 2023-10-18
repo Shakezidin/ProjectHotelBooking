@@ -6,69 +6,68 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	Init "github.com/shaikhzidhin/initiializer"
+	Init "github.com/shaikhzidhin/initializer"
 	"github.com/shaikhzidhin/models"
 )
 
-func ViewRoomCatagory(c *gin.Context) {
-	var catagories []models.RoomCategory
-	if err := Init.DB.Find(&catagories).Error; err != nil {
-		c.JSON(400, gin.H{"msg": err.Error()})
+// ViewRoomCategories returns a list of all room categories.
+func ViewRoomCategories(c *gin.Context) {
+	var categories []models.RoomCategory
+	if err := Init.DB.Find(&categories).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	// var hotel models.Hotel
-	c.JSON(200, gin.H{
-		"fecilities": catagories,
-		// "hotel": hotel,
-	})
+	c.JSON(http.StatusOK, gin.H{"categories": categories})
 }
 
-func AddRoomCatagory(c *gin.Context) {
-	var catagories models.RoomCategory
+// AddRoomCategory adds a new room category.
+func AddRoomCategory(c *gin.Context) {
+	var category models.RoomCategory
 
-	if err := c.ShouldBindJSON(&catagories); err != nil {
-		c.JSON(400, gin.H{"error": "Binding error"})
+	if err := c.ShouldBindJSON(&category); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Binding error"})
 		return
 	}
 
-	validationErr := validate.Struct(catagories)
+	validationErr := validate.Struct(category)
 	if validationErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "validation error1"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Validation error"})
 		return
 	}
 
-	record := Init.DB.Create(&catagories)
+	record := Init.DB.Create(&category)
 	if record.Error != nil {
 		// Log the error for debugging purposes.
 		fmt.Println("Database error:", record.Error)
 
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Error occurred while creating catagories",
+			"message": "Error occurred while creating category",
 			"error":   record.Error.Error(), // Include the specific database error message.
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "catagories create Success",
+		"message": "Category created successfully",
 	})
 }
 
-func DeleteRoomCatagories(c *gin.Context) {
-	catatagoryIDStr := c.DefaultQuery("id", "")
-	if catatagoryIDStr == "" {
-		c.JSON(400, gin.H{"error": "catagoryId query parameter is missing"})
+// DeleteRoomCategory deletes a room category by ID.
+func DeleteRoomCategory(c *gin.Context) {
+	categoryIDStr := c.Query("id")
+	if categoryIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Category ID query parameter is missing"})
 		return
 	}
-	catagoryID, err := strconv.Atoi(catatagoryIDStr)
+	categoryID, err := strconv.Atoi(categoryIDStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "convert error"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Conversion error"})
 		return
 	}
 
-	if err := Init.DB.Where("id = ?", uint(catagoryID)).Delete(&models.RoomCategory{}).Error; err != nil {
-		c.JSON(400, gin.H{"Error": "delete error"})
+	if err := Init.DB.Where("id = ?", uint(categoryID)).Delete(&models.RoomCategory{}).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Delete error"})
 		return
 	}
-	c.JSON(200, gin.H{"status": "delete success"})
+	c.JSON(http.StatusOK, gin.H{"status": "Delete success"})
 }

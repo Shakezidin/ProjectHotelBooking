@@ -4,6 +4,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Banner Model
 type Banner struct {
 	gorm.Model
 	Title     string `json:"title" gorm:"not null"`
@@ -14,6 +15,6 @@ type Banner struct {
 	Active    bool   `json:"active" gorm:"default:false"`
 	OwnerID   uint   `json:"owner_id" `
 	Owner     Owner  `gorm:"ForeignKey:OwnerID"`
-	HotelsId  uint   `json:"hotel_id"`
-	Hotels    Hotels `gorm:"ForeignKey:HotelsId"`
+	HotelsID  uint   `json:"hotel_id"`
+	Hotels    Hotels `gorm:"ForeignKey:HotelsID"`
 }

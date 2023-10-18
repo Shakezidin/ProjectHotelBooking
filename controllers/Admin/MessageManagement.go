@@ -4,34 +4,38 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	Init "github.com/shaikhzidhin/initiializer"
+	Init "github.com/shaikhzidhin/initializer"
 	"github.com/shaikhzidhin/models"
 )
 
+// GetMessages returns a list of all messages.
 func GetMessages(c *gin.Context) {
 	var messages []models.Contact
 	if err := Init.DB.Find(&messages).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching messages"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": messages})
+	c.JSON(http.StatusOK, gin.H{"messages": messages})
 }
 
-// deleteMessage deletes a message by ID
+// DeleteMessage deletes a message by its ID.
 func DeleteMessage(c *gin.Context) {
-	id := c.DefaultQuery("id", "")
-	if id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "message id query missing"})
+	messageID := c.DefaultQuery("id", "")
+	if messageID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Message ID query parameter is missing"})
 		return
 	}
+
 	var message models.Contact
-	if err := Init.DB.First(&message, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "error while fetching message"})
+	if err := Init.DB.First(&message, messageID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Error while fetching message"})
 		return
 	}
+
 	if err := Init.DB.Delete(&message).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "deleted message error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Deleted message error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"Error": "message deleted"})
+
+	c.JSON(http.StatusOK, gin.H{"message": "Message deleted"})
 }

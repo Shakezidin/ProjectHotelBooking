@@ -1,50 +1,59 @@
 package routes
 
 import (
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
-	User "github.com/shaikhzidhin/controllers/User"
+	UserCtrl "github.com/shaikhzidhin/controllers/User"
+	"github.com/shaikhzidhin/controllers/hotelowner"
 	"github.com/shaikhzidhin/middleware"
 )
 
+// UserRoutes Set up the routes for the user section of the application.
 func UserRoutes(c *gin.Engine) {
-
 	user := c.Group("/user")
-	{
-		store := cookie.NewStore([]byte("iamsuperkey"))
-		user.Use(sessions.Sessions("mysession", store))
 
-		user.POST("/signup", User.UserSignup)
-		user.POST("/signup-verification", User.SingupVerification)
-		user.POST("/login", User.UserLogin)
-		user.POST("/forgetpassword", User.ForgetPassword)
-		user.POST("/verifyotp", User.VerifyOTP)
-		user.POST("/setnewpassword", User.Newpassword)
+	// User Authentication routes
+	user.POST("/login", UserCtrl.Login)
+	user.POST("/signup", UserCtrl.Signup)
+	user.POST("/signup/verification", UserCtrl.SignupVerification)
 
-		user.GET("/profile", middleware.UserAuthMiddleWare, User.Profile)
-		user.PATCH("/editprofile", middleware.UserAuthMiddleWare, User.ProfileEdit)
-		user.PUT("/changepassword", middleware.UserAuthMiddleWare, User.PasswordChange)
-		user.GET("/history", middleware.UserAuthMiddleWare, User.History)
+	// Password Recovery routes
+	user.POST("/password/forget", UserCtrl.ForgetPassword)
+	user.POST("/password/forget/verifyotp", UserCtrl.VerifyOTP)
+	user.POST("/password/set/new", UserCtrl.NewPassword)
 
-		user.GET("/homepage", User.UserHome)
-		user.GET("/banner", User.BannerShowing)
-		user.POST("/searchresult", User.Searching)
-		user.GET("/seerooms", User.RoomsView)
-		user.GET("/seeroom", User.RoomDetails)
+	// User Home & Profile routes
+	user.GET("/", UserCtrl.Home)
+	user.GET("/profile", middleware.UserAuthMiddleware, UserCtrl.Profile)
+	user.PATCH("/profile/edit", middleware.UserAuthMiddleware, UserCtrl.ProfileEdit)
+	user.PUT("/profile/password/change", middleware.UserAuthMiddleware, UserCtrl.PasswordChange)
+	user.GET("/booking/history", middleware.UserAuthMiddleware, UserCtrl.History)
 
-		user.POST("/roomfilter", User.RoomFilter)
+	// Hotels routes
+	user.GET("/home", UserCtrl.Home)
+	user.GET("/home/banner", UserCtrl.BannerShowing)
+	user.POST("/home/banner/hotel", hotelowner.ViewSpecificHotel)
+	user.POST("/home/search", UserCtrl.Searching)
+	user.POST("/home/search/hotel", UserCtrl.SearchHotelByName)
 
-		user.POST("/searchhotel", User.SearchHotel)
+	// Room routes
+	user.GET("/home/rooms", UserCtrl.RoomsView)
+	user.GET("/home/rooms/room", UserCtrl.RoomDetails)
+	user.POST("/home/rooms/filter", UserCtrl.RoomFilter)
 
-		user.GET("/book", middleware.UserAuthMiddleWare, User.Book)
-		user.GET("/viewcoupens", middleware.UserAuthMiddleWare, User.Coupons)
-		user.GET("/applycoupen", middleware.UserAuthMiddleWare, User.ApplyCoupon)
-		user.GET("/wallet",middleware.UserAuthMiddleWare,User.Wallet)
-		user.GET("/applaywallet",middleware.UserAuthMiddleWare,User.Applaywallet)
-		user.GET("/payathotel",middleware.UserAuthMiddleWare,User.OfflinePayment)
-		user.GET("/onlinepayment",User.Razorpay)
-		user.GET("/payment/success",User.RazorpaySuccess)
-		user.GET("/success",User.Success)
-	}
+	// Contact routes
+	user.POST("/home/contact", middleware.UserAuthMiddleware, UserCtrl.SubmitContact)
+
+	// Booking Management routes
+	user.GET("/home/room/book", middleware.UserAuthMiddleware, UserCtrl.CalculateAmountForDays)
+	user.GET("/coupons/view", middleware.UserAuthMiddleware, UserCtrl.ViewNonBlockedCoupons)
+	user.GET("/coupon/apply", middleware.UserAuthMiddleware, UserCtrl.ApplyCoupon)
+	user.GET("/wallet", middleware.UserAuthMiddleware, UserCtrl.ViewWallet)
+	user.GET("/wallet/apply", middleware.UserAuthMiddleware, UserCtrl.ApplyWallet)
+	user.GET("/payat/hotel", middleware.UserAuthMiddleware, UserCtrl.OfflinePayment)
+
+	// Razorpay routes
+	user.GET("/online/payment", UserCtrl.RazorpayPaymentGateway)
+	user.GET("/payment/success", UserCtrl.RazorpaySuccess)
+	user.GET("/success", UserCtrl.SuccessPage)
+	user.GET("/cancel/booking", UserCtrl.CancelBooking)
 }

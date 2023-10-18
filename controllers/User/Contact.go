@@ -5,10 +5,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	Auth "github.com/shaikhzidhin/Auth"
-	Init "github.com/shaikhzidhin/initiializer"
+	Init "github.com/shaikhzidhin/initializer"
 	"github.com/shaikhzidhin/models"
 )
 
+// SubmitContact handles submitting a contact message to the admin.
 func SubmitContact(c *gin.Context) {
 	var message struct {
 		Message string `json:"message"`
@@ -22,19 +23,19 @@ func SubmitContact(c *gin.Context) {
 	header := c.Request.Header.Get("Authorization")
 	username, err := Auth.Trim(header)
 	if err != nil {
-		c.JSON(404, gin.H{"error": "email didnt get"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "email not found"})
 		return
 	}
 
 	var user models.User
 	if err := Init.DB.Where("user_name = ?", username).First(&user).Error; err != nil {
-		c.JSON(400, gin.H{"error": "Error while fetching user"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Error while fetching user"})
 		return
 	}
 
 	contact := models.Contact{
 		Message: message.Message,
-		User_Id: user.User_Id,
+		UserID:  user.ID,
 	}
 
 	if err := Init.DB.Create(&contact).Error; err != nil {

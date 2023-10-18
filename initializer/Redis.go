@@ -1,4 +1,4 @@
-package initiializer
+package initializer
 
 import (
 	"os"
@@ -6,6 +6,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// ReddisClient initializes and returns a Redis client.
 var ReddisClient = redis.NewClient(&redis.Options{
 	Addr:     os.Getenv("RedisAddr"),
 	Password: os.Getenv("RedisPass"),

@@ -1,5 +1,6 @@
 package models
 
+//SearchRequest for binding seraching details
 type SearchRequest struct {
 	LocOrPlace       string `json:"locationorplace" binding:"required"`
 	FromDate         string `json:"from_date" binding:"required" default:"current_date"`

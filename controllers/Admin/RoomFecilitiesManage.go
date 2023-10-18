@@ -6,69 +6,68 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	Init "github.com/shaikhzidhin/initiializer"
+	Init "github.com/shaikhzidhin/initializer"
 	"github.com/shaikhzidhin/models"
 )
 
-func ViewRoomFecilities(c *gin.Context) {
-	var fecilities []models.RoomFecilities
-	if err := Init.DB.Find(&fecilities).Error; err != nil {
-		c.JSON(400, gin.H{"msg": err.Error()})
+// ViewRoomFacilities returns a list of all room facilities.
+func ViewRoomFacilities(c *gin.Context) {
+	var facilities []models.RoomFacilities
+	if err := Init.DB.Find(&facilities).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	// var hotel models.Hotel
-	c.JSON(200, gin.H{
-		"fecilities": fecilities,
-		// "hotel": hotel,
-	})
+	c.JSON(http.StatusOK, gin.H{"facilities": facilities})
 }
 
-func AddRoomfecilility(c *gin.Context) {
-	var fecility models.RoomFecilities
+// AddRoomFacility adds a new room facility.
+func AddRoomFacility(c *gin.Context) {
+	var facility models.RoomFacilities
 
-	if err := c.ShouldBindJSON(&fecility); err != nil {
-		c.JSON(400, gin.H{"error": "Binding error"})
+	if err := c.ShouldBindJSON(&facility); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Binding error"})
 		return
 	}
 
-	validationErr := validate.Struct(fecility)
+	validationErr := validate.Struct(facility)
 	if validationErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "validation error1"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Validation error"})
 		return
 	}
 
-	record := Init.DB.Create(&fecility)
+	record := Init.DB.Create(&facility)
 	if record.Error != nil {
 		// Log the error for debugging purposes.
 		fmt.Println("Database error:", record.Error)
 
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Error occurred while creating fecility",
+			"message": "Error occurred while creating facility",
 			"error":   record.Error.Error(), // Include the specific database error message.
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "fecility create Success",
+		"message": "Facility created successfully",
 	})
 }
 
-func DeleteRoomFecility(c *gin.Context) {
-	fecilityIDStr := c.DefaultQuery("id", "")
-	if fecilityIDStr == "" {
-		c.JSON(400, gin.H{"error": "fecilityid query parameter is missing"})
+// DeleteRoomFacility deletes a room facility by ID.
+func DeleteRoomFacility(c *gin.Context) {
+	facilityIDStr := c.Query("id")
+	if facilityIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Facility ID query parameter is missing"})
 		return
 	}
-	fecilityID, err := strconv.Atoi(fecilityIDStr)
+	facilityID, err := strconv.Atoi(facilityIDStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "convert error"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Conversion error"})
 		return
 	}
 
-	if err := Init.DB.Where("id = ?", uint(fecilityID)).Delete(&models.RoomFecilities{}).Error; err != nil {
-		c.JSON(400, gin.H{"error": "delete error"})
+	if err := Init.DB.Where("id = ?", uint(facilityID)).Delete(&models.RoomFacilities{}).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Delete error"})
 		return
 	}
-	c.JSON(200, gin.H{"status": "delete success"})
+	c.JSON(http.StatusOK, gin.H{"status": "Delete success"})
 }

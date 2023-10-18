@@ -10,149 +10,144 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/razorpay/razorpay-go"
-	"github.com/shaikhzidhin/initiializer"
-	Init "github.com/shaikhzidhin/initiializer"
+	"github.com/shaikhzidhin/initializer"
+	Init "github.com/shaikhzidhin/initializer"
 	"github.com/shaikhzidhin/models"
 )
 
 type pageVariables struct {
-	OrderId string
+	OrderID string
 }
 
-func Razorpay(c *gin.Context) {
-	UserIdstr, err := initiializer.ReddisClient.Get(context.Background(), "userId").Result()
+// RazorpayPaymentGateway handles RazorPay payments.
+func RazorpayPaymentGateway(c *gin.Context) {
+	UserIDStr := c.Query("id")
+	UserID, err := strconv.Atoi(UserIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error getting 'userid' from Redis client"})
-		return
-	}
-	userid, err := strconv.Atoi(UserIdstr)
-	if err != nil {
-		c.JSON(400, gin.H{"error": "string convertion"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "string conversion"})
 	}
 
-	amountStr, err := initiializer.ReddisClient.Get(context.Background(), "Amount").Result()
+	amountStr, err := initializer.ReddisClient.Get(context.Background(), "Amount").Result()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error getting 'amount' from Redis client"})
 		return
 	}
 	amount, err := strconv.Atoi(amountStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "string convertion"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "string conversion"})
 	}
 
 	var user models.User
-	if err := Init.DB.Where("user_id = ?", uint(userid)).First(&user).Error; err != nil {
-		c.JSON(400, gin.H{"error": "User not found"})
+	if err := Init.DB.Where("id = ?", uint(UserID)).First(&user).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User not found"})
 		return
 	}
 	client := razorpay.NewClient("rzp_test_loKZTxH4NevSeO", "C41yIa655LTCzsbNS2Cietro")
 
-	amountt := int(amount) * 100
+	amountInPaisa := int(amount) * 100
 	data := map[string]interface{}{
-		"amount":   (amountt),
+		"amount":   amountInPaisa,
 		"currency": "INR",
 		"receipt":  "some_receipt_id",
 	}
 	body, err := client.Order.Create(data, nil)
 
 	if err != nil {
-		fmt.Printf("Problem is getting repository information %v\n", err)
+		fmt.Printf("Problem getting repository information: %v\n", err)
 		os.Exit(1)
 	}
 
 	value := body["id"]
 	str := value.(string)
 
-	homepagevariables := pageVariables{
-		OrderId: str,
+	homepageVariables := pageVariables{
+		OrderID: str,
 	}
 
-	c.HTML(200, "app.html", gin.H{
-		"userid":      user.User_Id,
-		"totalprice":  amountt,
-		"total":       amountt,
-		"orderid":     homepagevariables.OrderId,
+	c.HTML(http.StatusOK, "app.html", gin.H{
+		"userID":      user.ID,
+		"totalPrice":  amountInPaisa / 100,
+		"total":       amountInPaisa,
+		"orderID":     homepageVariables.OrderID,
 		"email":       user.Email,
-		"phonenumber": user.Phone,
+		"phoneNumber": user.Phone,
 	})
 }
 
-// >>>>>>>>>>>>>> Razorpay <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
+// RazorpaySuccess handles successful RazorPay payments.
 func RazorpaySuccess(c *gin.Context) {
-	userid := c.Query("user_id")
-	userID, _ := strconv.Atoi(userid)
-	orderid := c.Query("order_id")
-	paymentid := c.Query("payment_id")
+	userID := c.Query("user_id")
+	UserID, _ := strconv.Atoi(userID)
+	orderID := c.Query("order_id")
+	paymentID := c.Query("payment_id")
 	signature := c.Query("signature")
 	paymentAmount := c.Query("total")
 	amount, _ := strconv.Atoi(paymentAmount)
-	Rpay := models.RazorPay{
-		UserID:          uint(userID),
-		RazorPaymentId:  paymentid,
+	rPay := models.RazorPay{
+		UserID:          uint(UserID),
+		RazorPaymentID:  paymentID,
 		Signature:       signature,
-		RazorPayOrderID: orderid,
+		RazorPayOrderID: orderID,
 		AmountPaid:      float64(amount),
 	}
 
-	result := Init.DB.Create(&Rpay)
+	result := Init.DB.Create(&rPay)
 	if result.Error != nil {
-		c.JSON(400, gin.H{
-			"error": result.Error,
-		})
-
+		c.JSON(http.StatusBadRequest, gin.H{"error": result.Error})
+		return
 	}
 
-	fromdateStr, err := initiializer.ReddisClient.Get(context.Background(), "fromdate").Result()
-	fmt.Println(fromdateStr)
+	fromDateStr, err := initializer.ReddisClient.Get(context.Background(), "fromdate").Result()
+	fmt.Println(fromDateStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error getting 'fromdate' from Redis client"})
 		return
 	}
 
-	todateStr, err := initiializer.ReddisClient.Get(context.Background(), "todate").Result()
+	toDateStr, err := initializer.ReddisClient.Get(context.Background(), "todate").Result()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error getting 'todate' from Redis client"})
 		return
 	}
 
-	fromDate, err := time.Parse("2006-01-02", fromdateStr)
+	fromDate, err := time.Parse("2006-01-02", fromDateStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "Invalid fromdate format"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid fromdate format"})
 		return
 	}
 
-	toDate, err := time.Parse("2006-01-02", todateStr)
+	toDate, err := time.Parse("2006-01-02", toDateStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "Invalid toDate format"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid toDate format"})
 		return
 	}
-	roomidstr, err := initiializer.ReddisClient.Get(context.Background(), "roomid").Result()
+	roomIDStr, err := initializer.ReddisClient.Get(context.Background(), "roomid").Result()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error getting 'roomid' from Redis client"})
 		return
 	}
-	roomid, err := strconv.Atoi(roomidstr)
+	roomID, err := strconv.Atoi(roomIDStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "string convertion"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "string conversion"})
 	}
 	var room models.Rooms
-	if err := Init.DB.Where("id = ?", roomid).First(&room).Error; err != nil {
-		c.JSON(400, gin.H{"error": "error fetching room"})
+	if err := Init.DB.Where("id = ?", roomID).First(&room).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "error fetching room"})
+		return
 	}
 
 	var owner models.Owner
 	if err := Init.DB.Where("user_name = ?", room.OwnerUsername).First(&owner).Error; err != nil {
-		c.JSON(400, gin.H{"error": "error fetchin owner"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "error fetching owner"})
 	}
 	duration := toDate.Sub(fromDate)
 	days := duration.Hours() / 24
 
-	owneramount := (room.DiscountPrice * days) * 0.7
+	ownerAmount := (room.DiscountPrice * days) * 0.7
 
 	var booking models.Booking
-	booking.UserID = uint(userID)
-	booking.HotelID = room.HotelsId
+	booking.UserID = uint(UserID)
+	booking.HotelID = room.HotelsID
 	booking.RoomID = room.ID
 	booking.OwnerID = owner.ID
 	booking.RoomNo = uint(room.RoomNo)
@@ -161,32 +156,46 @@ func RazorpaySuccess(c *gin.Context) {
 	booking.PaymentMethod = "RAZOR PAY"
 	booking.AdminAmount = float64(amount)
 	booking.PaymentAmount = float64(amount)
-	booking.OwnerAmount = owneramount
+	booking.OwnerAmount = ownerAmount
 	booking.TotalDays = uint(days)
-	booking.RoomCategoryID = room.RoomCategoryId
+	booking.RoomCategoryID = room.RoomCategoryID
+	booking.CancellationID = room.CancellationID
 	booking.BookedAt = time.Now()
 
 	if err := Init.DB.Create(&booking).Error; err != nil {
-		c.JSON(400, gin.H{"error": "booking error"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "booking error"})
 		return
 	}
 
-	var availablerooms models.AvailableRoom
-	availablerooms.RoomID = room.ID
-	availablerooms.CheckIn = fromDate
-	availablerooms.Checkout = toDate
-	availablerooms.IsAvailable = false
+	couponIDStr, _ := initializer.ReddisClient.Get(context.Background(), "couponID").Result()
+	couponID, _ := strconv.Atoi(couponIDStr)
 
-	Init.DB.Create(&availablerooms)
+	var usedCoupon models.UsedCoupon
+	usedCoupon.CouponID = uint(couponID)
+	usedCoupon.UserID = uint(UserID)
 
-	owner.Revenue += int(owneramount)
+	if err := Init.DB.Create(&usedCoupon).Error; err != nil {
+		c.JSON(400, gin.H{"error": "usedcoupon creation error"})
+		return
+	}
+
+	var availableRooms models.AvailableRoom
+	availableRooms.BookingID = booking.ID
+	availableRooms.RoomID = room.ID
+	availableRooms.CheckIn = fromDate
+	availableRooms.CheckOut = toDate
+	availableRooms.IsAvailable = false
+
+	Init.DB.Create(&availableRooms)
+
+	owner.Revenue += int(ownerAmount)
 	Init.DB.Save(&owner)
 
 	adminRevenue := models.Revenue{}
 	Init.DB.First(&adminRevenue, "owner_id= ?", owner.ID)
-	if adminRevenue.OwnerId == 0 {
+	if adminRevenue.OwnerID == 0 {
 		newAdminRevenue := models.Revenue{
-			OwnerId:      owner.ID,
+			OwnerID:      owner.ID,
 			AdminRevenue: amount,
 		}
 		Init.DB.Create(&newAdminRevenue)
@@ -195,15 +204,16 @@ func RazorpaySuccess(c *gin.Context) {
 		Init.DB.Save(&adminRevenue)
 	}
 
-	c.JSON(200, gin.H{"status": true})
+	c.JSON(http.StatusOK, gin.H{"status": true})
 }
 
-func Success(c *gin.Context) {
-	pid := c.Query("id")
-	fmt.Println(pid)
-	fmt.Printf("Fully success")
+// SuccessPage renders the success page.
+func SuccessPage(c *gin.Context) {
+	pID := c.Query("id")
+	fmt.Println(pID)
+	fmt.Println("Fully successful")
 
-	c.HTML(200, "success.html", gin.H{
-		"paymentid": pid,
+	c.HTML(http.StatusOK, "success.html", gin.H{
+		"paymentID": pID,
 	})
 }

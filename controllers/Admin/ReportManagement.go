@@ -4,64 +4,68 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	Init "github.com/shaikhzidhin/initiializer"
+	Init "github.com/shaikhzidhin/initializer"
 	"github.com/shaikhzidhin/models"
 )
 
+// ViewReports returns a list of all reports.
 func ViewReports(c *gin.Context) {
 	var reports []models.Report
 	if err := Init.DB.Find(&reports).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error while fetching reports"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching reports"})
 		return
 	}
-	c.HTML(http.StatusOK, "report", gin.H{"report": reports})
+	c.JSON(http.StatusOK, gin.H{"reports": reports})
 }
 
+// DeleteReport deletes a report by ID.
 func DeleteReport(c *gin.Context) {
 	id := c.DefaultQuery("id", "")
 	if id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"Error": "report id query missing"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Report ID query missing"})
 		return
 	}
 	var report models.Report
 	if err := Init.DB.First(&report, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "error fetching report"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching report"})
 		return
 	}
 	if err := Init.DB.Delete(&report).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error deleting report"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error deleting report"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "report deleted success"})
+	c.JSON(http.StatusOK, gin.H{"status": "Report deleted successfully"})
 }
 
+// ReportDetails retrieves details of a single report.
 func ReportDetails(c *gin.Context) {
-	id := c.DefaultQuery("id", "")
+	id := c.Query("id")
 	if id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"Error": "report id query missing"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Report ID query missing"})
 		return
 	}
 	var report models.Report
 	if err := Init.DB.First(&report, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "error fetching report"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching report"})
 		return
 	}
 
 	var booking models.Booking
-	if err := Init.DB.First(&booking, report.BookingId).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "error fetching booking"})
+	if err := Init.DB.First(&booking, report.BookingID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching booking"})
 		return
 	}
 
 	var hotel models.Hotels
 	if err := Init.DB.First(&hotel, booking.HotelID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "error fetching hotel"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Error fetching hotel"})
 		return
 	}
 
-	c.HTML(http.StatusOK, "reportDetails", gin.H{"report": report, "hotel": hotel})
+	c.JSON(http.StatusOK, gin.H{"report": report, "booking": booking, "hotel": hotel})
 }
 
+// ReportStatus updates the status of a report and associated booking.
 func ReportStatus(c *gin.Context) {
 	var input struct {
 		BookingID uint   `json:"bookingId"`
@@ -97,5 +101,5 @@ func ReportStatus(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "success"})
+	c.JSON(http.StatusOK, gin.H{"status": "Success"})
 }

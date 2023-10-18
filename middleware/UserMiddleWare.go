@@ -5,11 +5,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	auth "github.com/shaikhzidhin/Auth"
-	Init "github.com/shaikhzidhin/initiializer"
+	Init "github.com/shaikhzidhin/initializer"
 	"github.com/shaikhzidhin/models"
 )
 
-func UserAuthMiddleWare(c *gin.Context) {
+//UserAuthMiddleware User verification
+func UserAuthMiddleware(c *gin.Context) {
 	header := c.Request.Header.Get("Authorization")
 	if header == "" {
 		c.JSON(400, gin.H{"error": "token missing"})

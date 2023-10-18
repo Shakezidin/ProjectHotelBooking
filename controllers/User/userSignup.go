@@ -10,8 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
 	controllers "github.com/shaikhzidhin/controllers/Otp"
-	"github.com/shaikhzidhin/initiializer"
-	Init "github.com/shaikhzidhin/initiializer"
+	Init "github.com/shaikhzidhin/initializer"
 	"github.com/shaikhzidhin/models"
 )
 
@@ -29,9 +28,8 @@ func generateRandomString(length int) string {
 	return string(b)
 }
 
-// >>>>>>>>>>>>>> User Signup <<<<<<<<<<<<<<<<<<<<<<<<<<
-
-func UserSignup(c *gin.Context) {
+// Signup for user signup
+func Signup(c *gin.Context) {
 	var user models.User
 
 	if err := c.ShouldBindJSON(&user); err != nil {
@@ -98,14 +96,14 @@ func UserSignup(c *gin.Context) {
 	}
 
 	// Inserting the OTP into Redis
-	err = initiializer.ReddisClient.Set(context.Background(), "signUpOTP"+user.Email, Otp, 5*time.Minute).Err()
+	err = Init.ReddisClient.Set(context.Background(), "signUpOTP"+user.Email, Otp, 5*time.Minute).Err()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error inserting OTP in Redis client"})
 		return
 	}
 
 	// Inserting the data into Redis
-	err = initiializer.ReddisClient.Set(context.Background(), "userData"+user.Email, jsonData, 5*time.Minute).Err()
+	err = Init.ReddisClient.Set(context.Background(), "userData"+user.Email, jsonData, 5*time.Minute).Err()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error inserting user data in Redis client"})
 		return
@@ -114,9 +112,8 @@ func UserSignup(c *gin.Context) {
 	c.JSON(http.StatusAccepted, gin.H{"status": "true", "messsage": "Go to user/signup-verification"})
 }
 
-// >>>>>>>>>>>>>> User OTP verification <<<<<<<<<<<<<<<<<<<<<<<<<<
-
-func SingupVerification(c *gin.Context) {
+// SignupVerification for User OTP verification
+func SignupVerification(c *gin.Context) {
 	type otpCredentials struct {
 		Email string `json:"email"`
 		Otp   string `json:"otp"`
@@ -130,7 +127,7 @@ func SingupVerification(c *gin.Context) {
 	if controllers.VerifyOTP("signUpOTP"+otpCred.Email, otpCred.Otp, c) {
 		var userData models.User
 		superKey := "userData" + otpCred.Email
-		jsonData, err := initiializer.ReddisClient.Get(context.Background(), superKey).Result()
+		jsonData, err := Init.ReddisClient.Get(context.Background(), superKey).Result()
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error getting user data from Redis client"})
 			return
@@ -138,6 +135,19 @@ func SingupVerification(c *gin.Context) {
 		err = json.Unmarshal([]byte(jsonData), &userData)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error binding Redis JSON data to user variable"})
+			return
+		}
+
+		if userData.ReferralCode == "" {
+			userData.ReferralCode = generateRandomString(10)
+
+			// Create user and save transaction history and wallet balance
+			results := Init.DB.Create(&userData)
+			if results.Error != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"status": "falsee", "Error": results.Error})
+				return
+			}
+			c.JSON(200, gin.H{"status": "user created success"})
 			return
 		}
 
@@ -149,17 +159,17 @@ func SingupVerification(c *gin.Context) {
 		}
 		// Update referred user's wallet balance
 		var wallet models.Wallet
-		if err := Init.DB.Where("user_id = ?", referredUser.User_Id).First(&wallet).Error; err != nil {
+		if err := Init.DB.Where("user_id = ?", referredUser.ID).First(&wallet).Error; err != nil {
 			wallet = models.Wallet{
 				Balance: 0,
-				User_Id: referredUser.User_Id,
+				UserID:  referredUser.ID,
 			}
 		} else {
 			wallet.Balance += 100
 			var transaction models.Transaction
 
 			transaction.Amount = 100
-			transaction.USer_Id = referredUser.User_Id
+			transaction.UserID = referredUser.ID
 			transaction.Details = "Invite bonuse added"
 			transaction.Date = time.Now()
 
@@ -189,7 +199,7 @@ func SingupVerification(c *gin.Context) {
 		var transaction models.Transaction
 
 		transaction.Amount = 50
-		transaction.USer_Id = userData.User_Id
+		transaction.UserID = userData.ID
 		transaction.Details = "referal bonuse added"
 		transaction.Date = time.Now()
 

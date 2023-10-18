@@ -10,9 +10,10 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/shaikhzidhin/initiializer"
+	"github.com/shaikhzidhin/initializer"
 )
 
+// GetOTP generates and sends a one-time password (OTP) via email.
 func GetOTP(name, email string) string {
 	otp, err := getRandNum()
 	if err != nil {
@@ -23,7 +24,7 @@ func GetOTP(name, email string) string {
 	return otp
 }
 
-// Getting a random number for otp. This function helps get otp to generate the a random otp
+// getRandNum generates a random OTP.
 func getRandNum() (string, error) {
 	otp, err := rand.Int(rand.Reader, big.NewInt(8999))
 	if err != nil {
@@ -32,6 +33,7 @@ func getRandNum() (string, error) {
 	return strconv.FormatInt(otp.Int64()+1000, 10), nil
 }
 
+// sendEmail sends an email with the OTP.
 func sendEmail(name, msg, email string) {
 	SMTPemail := os.Getenv("EMAIL")
 	SMTPpass := os.Getenv("PASSWORD")
@@ -43,22 +45,22 @@ func sendEmail(name, msg, email string) {
 	}
 }
 
+// VerifyOTP verifies if the provided OTP matches the stored OTP in Redis.
 func VerifyOTP(superkey, otpInput string, c *gin.Context) bool {
-	//otp verification in reddis
-	otp, err := initiializer.ReddisClient.Get(context.Background(), superkey).Result()
+	// OTP verification in Redis
+	otp, err := initializer.ReddisClient.Get(context.Background(), superkey).Result()
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"status": "false", "error": "Error retrieving data from Redis"})
 		return false
-	} else {
-		if otp == otpInput {
-			err := initiializer.ReddisClient.Del(context.Background(), superkey).Err()
-			if err != nil {
-				c.JSON(http.StatusUnauthorized, gin.H{"status": "false", "error": "Error deleting otp from Redis"})
-				return false
-			}
-			return true
-		} else {
+	}
+
+	if otp == otpInput {
+		err := initializer.ReddisClient.Del(context.Background(), superkey).Err()
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"status": "false", "error": "Error deleting OTP from Redis"})
 			return false
 		}
+		return true
 	}
+	return false
 }

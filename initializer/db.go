@@ -1,4 +1,4 @@
-package initiializer
+package initializer
 
 import (
 	"fmt"
@@ -8,23 +8,27 @@ import (
 	"gorm.io/gorm"
 )
 
+//DB Initialized with database
 var DB *gorm.DB
 
-func Database_connection() {
+// DatabaseConnection function to migrate models in database
+func DatabaseConnection() {
 	dsn := "host=localhost user=postgres password=Sinu1090. dbname=icrodebooking port=5432 sslmode=disable"
 
 	// Assign the database connection to the package-level DB variable
+
 	var err error
+	
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		fmt.Println("Connection to database failed")
+		fmt.Println("Connection to the database failed")
 	}
 	DB.AutoMigrate(
+		&models.Contact{},
 		&models.Admin{},
 		&models.Cancellation{},
-		&models.RoomFecilities{},
+		&models.RoomFacilities{},
 		&models.RoomCategory{},
-		&models.Review{},
 		&models.Report{},
 		&models.Rooms{},
 		&models.HotelCategory{},
@@ -34,13 +38,12 @@ func Database_connection() {
 		&models.Hotels{},
 		&models.User{},
 		&models.Coupon{},
-		&models.UsedCoupen{},
+		&models.UsedCoupon{},
 		&models.Booking{},
 		&models.Banner{},
 		&models.Wallet{},
 		&models.Transaction{},
 		&models.RazorPay{},
-		&models.Contact{},
 		&models.Revenue{},
 	)
 }
