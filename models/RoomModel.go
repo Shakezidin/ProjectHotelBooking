@@ -16,11 +16,10 @@ type Cancellation struct {
 // AvailableRoom Model
 type AvailableRoom struct {
 	gorm.Model
-	RoomID      uint `json:"room_id"`
-	BookingID   uint
-	CheckIn     time.Time `json:"check_in" time_format:"2006-01-02"`
-	CheckOut    time.Time `json:"check_out" time_format:"2006-01-02"`
-	IsAvailable bool      `json:"is_available"`
+	RoomID    uint `json:"room_id"`
+	BookingID uint
+	CheckIn   time.Time `json:"check_in" time_format:"2006-01-02"`
+	CheckOut  time.Time `json:"check_out" time_format:"2006-01-02"`
 }
 
 // RoomFacilities Model
@@ -57,5 +56,5 @@ type Rooms struct {
 	Hotels         Hotels       `gorm:"ForeignKey:HotelsID"`
 	OwnerUsername  string       `json:"owner_username"`
 	RoomCategoryID uint         `json:"category_id" gorm:"not null"`
-	RoomCategory   RoomCategory `gorm:"ForeignKey:RoomCategoryID"`
+    RoomCategory   RoomCategory `json:"category" gorm:"ForeignKey:RoomCategoryID"`
 }

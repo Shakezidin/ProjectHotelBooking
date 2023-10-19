@@ -49,6 +49,7 @@ test:
 	golint controllers/hotelowner/RoomManagement.go
 	golint controllers/Otp/Otplog.go
 	golint controllers/User/Booking.go
+	golint controllers/User/Cancellation.go
 	golint controllers/User/Contact.go
 	golint controllers/User/Coupon.go
 	golint controllers/User/HotelManagement.go

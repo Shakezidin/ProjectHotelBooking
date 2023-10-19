@@ -129,7 +129,6 @@ func OfflinePayment(c *gin.Context) {
 	availableRooms.RoomID = room.ID
 	availableRooms.CheckIn = fromDate
 	availableRooms.CheckOut = toDate
-	availableRooms.IsAvailable = false
 
 	Init.DB.Create(&availableRooms)
 

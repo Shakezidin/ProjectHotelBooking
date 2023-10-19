@@ -105,9 +105,10 @@ func ApplyCoupon(c *gin.Context) {
 	couponID, _ := strconv.Atoi(c.Query("id"))
 	amountStr, err := Init.ReddisClient.Get(context.Background(), "Amount").Result()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error getting 'Amount' from Redis client"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error getting 'Amount' from Redis client: " + err.Error()})
 		return
 	}
+
 	amount, err := strconv.Atoi(amountStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "string conversion"})
@@ -116,17 +117,19 @@ func ApplyCoupon(c *gin.Context) {
 
 	CouponIDstr, err := Init.ReddisClient.Get(context.Background(), "couponID").Result()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "Error getting 'Amount' from Redis client"})
-		return
+		c.JSON(http.StatusBadRequest, gin.H{"status": "false", "error": "No coupon used"})
 	}
-	oldcouponID, err := strconv.Atoi(CouponIDstr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "string conversion"})
-		return
-	}
-	if oldcouponID == couponID {
-		c.JSON(400, gin.H{"error": "alredy used coupon"})
-		return
+	if CouponIDstr != "" {
+		oldcouponID, err := strconv.Atoi(CouponIDstr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "string conversion"})
+			return
+		}
+
+		if oldcouponID == couponID {
+			c.JSON(400, gin.H{"error": "alredy used coupon"})
+			return
+		}
 	}
 	var coupon models.Coupon
 	var usedCoupon models.UsedCoupon
@@ -135,6 +138,12 @@ func ApplyCoupon(c *gin.Context) {
 	username, err := Auth.Trim(header)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "username not found"})
+		return
+	}
+
+	var user models.User
+	if err := Init.DB.Where("user_name = ?", username).First(&user).Error; err != nil {
+		c.JSON(400, gin.H{"error": "user fetching error"})
 		return
 	}
 
@@ -159,7 +168,7 @@ func ApplyCoupon(c *gin.Context) {
 		return
 	}
 
-	result := Init.DB.Where("coupon_id = ? AND user_name = ?", coupon.ID, username).First(&usedCoupon)
+	result := Init.DB.Where("coupon_id = ? AND user_id = ?", coupon.ID, user.ID).First(&usedCoupon)
 	if result.RowsAffected > 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Coupon already used"})
 		return
@@ -264,7 +273,7 @@ func ApplyWallet(c *gin.Context) {
 	transaction.Date = time.Now()
 	transaction.Details = "Booked room in"
 	transaction.Amount = amount
-	transaction.UserID=wallet.UserID
+	transaction.UserID = wallet.UserID
 
 	if err := Init.DB.Create(&transaction).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "transaction adding error"})

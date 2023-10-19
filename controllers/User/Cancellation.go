@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// CancelBooking helps to cancel booked hotel before date
 func CancelBooking(c *gin.Context) {
 	bookingID := c.Query("id")
 	var booking models.Booking
@@ -40,26 +41,58 @@ func CancelBooking(c *gin.Context) {
 	}
 
 	refundPercentage := cancellation.RefundAmountPercentage
-
-	// Calculate the refund amount for the user's wallet based on the cancellation scheme
 	refundAmount := (float64(refundPercentage) / 100) * booking.PaymentAmount
 
-	// Calculate admin and owner revenue adjustments
-	adminRevenueAdjustment := (refundAmount * 1 / 4) // Admin gets 1/4 of the refund
-	ownerRevenueAdjustment := (refundAmount * 3 / 4) // Owner gets 3/4 of the refund
+	if refundPercentage > 99 {
 
-	// Update admin and owner revenues
-	if err := tx.Model(&models.Revenue{}).Where("owner_id = ?", ownerID).Update("admin_revenue", gorm.Expr("admin_revenue - ?", adminRevenueAdjustment)).Error; err != nil {
-		tx.Rollback() // Rollback the transaction
-		c.JSON(400, gin.H{"error": "Admin revenue updating error"})
-		return
-	}
+		ownerRevenueAdjustment, adminRevenueAdjustment := 0, 0
+		adminRevenueAdjustment = adminRevenueAdjustment - int(booking.AdminAmount)
+		ownerRevenueAdjustment = ownerRevenueAdjustment - int(booking.OwnerAmount)
+		userID := booking.UserID
+		userWallet := GetUserWallet(tx, userID)
 
-	if err := tx.Model(&models.Owner{}).Where("id = ?", ownerID).Update("Revenue", gorm.Expr("Revenue - ?", ownerRevenueAdjustment)).Error; err != nil {
-		tx.Rollback() // Rollback the transaction
-		c.JSON(400, gin.H{"error": "Owner revenue updating error"})
+		if userWallet != nil {
+			userWallet.Balance += refundAmount
+
+			// Update the user's wallet balance in the database
+			if err := tx.Save(userWallet).Error; err != nil {
+				tx.Rollback() // Rollback the transaction
+				c.JSON(400, gin.H{"error": "User wallet balance updating error"})
+				return
+			}
+		} else {
+			tx.Rollback() // Rollback the transaction
+			c.JSON(400, gin.H{"error": "User wallet not found"})
+			return
+		}
+
+		// Update admin and owner revenues based on the calculated adjustments
+		if err := tx.Model(&models.Revenue{}).Where("owner_id = ?", ownerID).Update("admin_revenue", gorm.Expr("admin_revenue + ?", adminRevenueAdjustment)).Error; err != nil {
+			tx.Rollback() // Rollback the transaction
+			c.JSON(400, gin.H{"error": "Admin revenue updating error"})
+			return
+		}
+
+		if err := tx.Model(&models.Owner{}).Where("id = ?", ownerID).Update("Revenue", gorm.Expr("Revenue + ?", ownerRevenueAdjustment)).Error; err != nil {
+			tx.Rollback() // Rollback the transaction
+			c.JSON(400, gin.H{"error": "Owner revenue updating error"})
+			return
+		}
+
+		// Commit the transaction
+		if err := tx.Commit().Error; err != nil {
+			c.JSON(400, gin.H{"error": "Transaction commit error"})
+			return
+		}
+
+		// Respond with a success message
+		c.JSON(200, gin.H{"message": "Booking canceled successfully"})
 		return
+
 	}
+	// Calculate admin and owner revenue adjustments based on the full booking amount
+	adminRevenueAdjustment := (1 / 4) * (booking.PaymentAmount - refundAmount) 
+	ownerRevenueAdjustment := (3 / 4) * (booking.PaymentAmount - refundAmount) 
 
 	// Update the booking's cancellation status and save it to the database
 	if err := tx.Model(&models.Booking{}).Where("id = ?", bookingID).Update("Cancelled", "Cancelled").Error; err != nil {
@@ -84,6 +117,19 @@ func CancelBooking(c *gin.Context) {
 	} else {
 		tx.Rollback() // Rollback the transaction
 		c.JSON(400, gin.H{"error": "User wallet not found"})
+		return
+	}
+
+	// Update admin and owner revenues based on the calculated adjustments
+	if err := tx.Model(&models.Revenue{}).Where("owner_id = ?", ownerID).Update("admin_revenue", gorm.Expr("admin_revenue - ?", int(adminRevenueAdjustment))).Error; err != nil {
+		tx.Rollback() // Rollback the transaction
+		c.JSON(400, gin.H{"error": "Admin revenue updating error"})
+		return
+	}
+
+	if err := tx.Model(&models.Owner{}).Where("id = ?", ownerID).Update("Revenue", gorm.Expr("Revenue - ?", int(ownerRevenueAdjustment))).Error; err != nil {
+		tx.Rollback() // Rollback the transaction
+		c.JSON(400, gin.H{"error": "Owner revenue updating error"})
 		return
 	}
 
