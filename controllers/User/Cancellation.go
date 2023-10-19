@@ -66,6 +66,13 @@ func CancelBooking(c *gin.Context) {
 			return
 		}
 
+		// Update the booking's cancellation status and save it to the database
+		if err := tx.Model(&models.Booking{}).Where("id = ?", bookingID).Update("Cancelled", "Cancelled").Error; err != nil {
+			tx.Rollback() // Rollback the transaction
+			c.JSON(400, gin.H{"error": "Booking status updating error"})
+			return
+		}
+
 		// Update admin and owner revenues based on the calculated adjustments
 		if err := tx.Model(&models.Revenue{}).Where("owner_id = ?", ownerID).Update("admin_revenue", gorm.Expr("admin_revenue + ?", adminRevenueAdjustment)).Error; err != nil {
 			tx.Rollback() // Rollback the transaction
@@ -91,8 +98,8 @@ func CancelBooking(c *gin.Context) {
 
 	}
 	// Calculate admin and owner revenue adjustments based on the full booking amount
-	adminRevenueAdjustment := (1 / 4) * (booking.PaymentAmount - refundAmount) 
-	ownerRevenueAdjustment := (3 / 4) * (booking.PaymentAmount - refundAmount) 
+	adminRevenueAdjustment := (1 / 4) * (booking.PaymentAmount - refundAmount)
+	ownerRevenueAdjustment := (3 / 4) * (booking.PaymentAmount - refundAmount)
 
 	// Update the booking's cancellation status and save it to the database
 	if err := tx.Model(&models.Booking{}).Where("id = ?", bookingID).Update("Cancelled", "Cancelled").Error; err != nil {
@@ -121,13 +128,26 @@ func CancelBooking(c *gin.Context) {
 	}
 
 	// Update admin and owner revenues based on the calculated adjustments
-	if err := tx.Model(&models.Revenue{}).Where("owner_id = ?", ownerID).Update("admin_revenue", gorm.Expr("admin_revenue - ?", int(adminRevenueAdjustment))).Error; err != nil {
+	if err := tx.Model(&models.Revenue{}).Where("owner_id = ?", ownerID).Update("admin_revenue", gorm.Expr("admin_revenue - ?", booking.AdminAmount)).Error; err != nil {
 		tx.Rollback() // Rollback the transaction
 		c.JSON(400, gin.H{"error": "Admin revenue updating error"})
 		return
 	}
 
-	if err := tx.Model(&models.Owner{}).Where("id = ?", ownerID).Update("Revenue", gorm.Expr("Revenue - ?", int(ownerRevenueAdjustment))).Error; err != nil {
+	if err := tx.Model(&models.Owner{}).Where("id = ?", ownerID).Update("Revenue", gorm.Expr("Revenue - ?", booking.OwnerAmount)).Error; err != nil {
+		tx.Rollback() // Rollback the transaction
+		c.JSON(400, gin.H{"error": "Owner revenue updating error"})
+		return
+	}
+
+	// Update admin and owner revenues based on the calculated adjustments
+	if err := tx.Model(&models.Revenue{}).Where("owner_id = ?", ownerID).Update("admin_revenue", gorm.Expr("admin_revenue + ?", adminRevenueAdjustment)).Error; err != nil {
+		tx.Rollback() // Rollback the transaction
+		c.JSON(400, gin.H{"error": "Admin revenue updating error"})
+		return
+	}
+
+	if err := tx.Model(&models.Owner{}).Where("id = ?", ownerID).Update("Revenue", gorm.Expr("Revenue + ?", ownerRevenueAdjustment)).Error; err != nil {
 		tx.Rollback() // Rollback the transaction
 		c.JSON(400, gin.H{"error": "Owner revenue updating error"})
 		return
