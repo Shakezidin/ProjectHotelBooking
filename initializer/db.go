@@ -15,8 +15,8 @@ var DB *gorm.DB
 // DatabaseConnection initializes and returns a GORM database connection.
 func DatabaseConnection() *gorm.DB {
 	host := os.Getenv("HOST")
-	user := os.Getenv("USER")
-	password := os.Getenv("PASSWORD")
+	user := os.Getenv("PSQLUSER")
+	password := os.Getenv("PSQLPASSWORD")
 	dbname := os.Getenv("DATABASENAME")
 	port := os.Getenv("PORT")
 	sslmode := os.Getenv("SSLMODE")
