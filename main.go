@@ -8,8 +8,8 @@ import (
 
 func main() {
 
-	Init.DatabaseConnection()
 	Init.LoadEnvironmentVariables()
+	Init.DatabaseConnection()
 
 	r := gin.Default()
 	r.LoadHTMLGlob("templates/*")

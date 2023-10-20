@@ -2,27 +2,33 @@ package initializer
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/shaikhzidhin/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-//DB Initialized with database
+// DB is the GORM database instance.
 var DB *gorm.DB
 
-// DatabaseConnection function to migrate models in database
-func DatabaseConnection() {
-	dsn := "host=localhost user=postgres password=Sinu1090. dbname=icrodebooking port=5432 sslmode=disable"
-
-	// Assign the database connection to the package-level DB variable
+// DatabaseConnection initializes and returns a GORM database connection.
+func DatabaseConnection() *gorm.DB {
+	host := os.Getenv("HOST")
+	user := os.Getenv("USER")
+	password := os.Getenv("PASSWORD")
+	dbname := os.Getenv("DATABASENAME")
+	port := os.Getenv("PORT")
+	sslmode := os.Getenv("SSLMODE")
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s", host, user, password, dbname, port, sslmode)
 
 	var err error
-	
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		fmt.Println("Connection to the database failed")
+		fmt.Println("Connection to the database failed:", err)
 	}
+
+	// AutoMigrate all models
 	DB.AutoMigrate(
 		&models.Contact{},
 		&models.Admin{},
@@ -46,4 +52,6 @@ func DatabaseConnection() {
 		&models.RazorPay{},
 		&models.Revenue{},
 	)
+
+	return DB
 }
