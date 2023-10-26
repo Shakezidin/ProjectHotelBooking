@@ -132,7 +132,7 @@ func OfflinePayment(c *gin.Context) {
 
 	Init.DB.Create(&availableRooms)
 
-	owner.Revenue += int(ownerAmount)
+	owner.Revenue += uint(ownerAmount)
 	Init.DB.Save(&owner)
 
 	adminRevenue := models.Revenue{}
@@ -140,11 +140,11 @@ func OfflinePayment(c *gin.Context) {
 	if adminRevenue.OwnerID == 0 {
 		newAdminRevenue := models.Revenue{
 			OwnerID:      owner.ID,
-			AdminRevenue: amount,
+			AdminRevenue: uint(amount),
 		}
 		Init.DB.Create(&newAdminRevenue)
 	} else {
-		adminRevenue.AdminRevenue += amount
+		adminRevenue.AdminRevenue += uint(amount)
 		Init.DB.Save(&adminRevenue)
 	}
 

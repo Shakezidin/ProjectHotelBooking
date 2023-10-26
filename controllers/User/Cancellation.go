@@ -44,10 +44,10 @@ func CancelBooking(c *gin.Context) {
 	refundAmount := (float64(refundPercentage) / 100) * booking.PaymentAmount
 
 	if refundPercentage > 99 {
-
-		ownerRevenueAdjustment, adminRevenueAdjustment := 0, 0
-		adminRevenueAdjustment = adminRevenueAdjustment - int(booking.AdminAmount)
-		ownerRevenueAdjustment = ownerRevenueAdjustment - int(booking.OwnerAmount)
+		var adminRevenueAdjustment uint
+		var ownerRevenueAdjustment uint
+		adminRevenueAdjustment = adminRevenueAdjustment - uint(booking.AdminAmount)
+		ownerRevenueAdjustment = ownerRevenueAdjustment - uint(booking.OwnerAmount)
 		userID := booking.UserID
 		userWallet := GetUserWallet(tx, userID)
 

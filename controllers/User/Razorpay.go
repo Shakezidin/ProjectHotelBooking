@@ -42,7 +42,7 @@ func RazorpayPaymentGateway(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "User not found"})
 		return
 	}
-	client := razorpay.NewClient("rzp_test_loKZTxH4NevSeO", "C41yIa655LTCzsbNS2Cietro")
+	client := razorpay.NewClient(os.Getenv("RAZORPAY_KEY_ID"), os.Getenv("RAZORPAY_SECRET"))
 
 	amountInPaisa := int(amount) * 100
 	data := map[string]interface{}{
@@ -187,7 +187,7 @@ func RazorpaySuccess(c *gin.Context) {
 
 	Init.DB.Create(&availableRooms)
 
-	owner.Revenue += int(ownerAmount)
+	owner.Revenue += uint(ownerAmount)
 	Init.DB.Save(&owner)
 
 	adminRevenue := models.Revenue{}
@@ -195,11 +195,11 @@ func RazorpaySuccess(c *gin.Context) {
 	if adminRevenue.OwnerID == 0 {
 		newAdminRevenue := models.Revenue{
 			OwnerID:      owner.ID,
-			AdminRevenue: amount,
+			AdminRevenue: uint(amount),
 		}
 		Init.DB.Create(&newAdminRevenue)
 	} else {
-		adminRevenue.AdminRevenue += amount
+		adminRevenue.AdminRevenue += uint(amount)
 		Init.DB.Save(&adminRevenue)
 	}
 
